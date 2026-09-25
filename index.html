@@ -54,8 +54,7 @@ font-weight:700;
 margin:10px 0 6px;
 }
 
-input,
-button{
+input,button{
 width:100%;
 min-height:50px;
 border:1px solid #bbb;
@@ -102,6 +101,24 @@ color:#188038;
 color:#d93025;
 }
 
+.material-ok{
+background:#e8f5e9;
+border:2px solid #34a853;
+padding:12px;
+border-radius:9px;
+margin-top:10px;
+font-weight:bold;
+}
+
+.material-error{
+background:#fce8e6;
+border:2px solid #d93025;
+padding:12px;
+border-radius:9px;
+margin-top:10px;
+font-weight:bold;
+}
+
 </style>
 
 </head>
@@ -116,7 +133,6 @@ color:#d93025;
 
 <main>
 
-
 <div class="card">
 
 <button
@@ -127,13 +143,11 @@ onclick="iniciarCamara()">
 
 </button>
 
-
 <video
 id="video"
 autoplay
 playsinline>
 </video>
-
 
 <button
 id="btnDetener"
@@ -155,7 +169,8 @@ style="display:none">
 <input
 id="codigo"
 type="text"
-placeholder="Código de materia prima">
+placeholder="Código de materia prima"
+readonly>
 
 
 <label>Material</label>
@@ -163,15 +178,20 @@ placeholder="Código de materia prima">
 <input
 id="material"
 type="text"
-placeholder="Ej: PP EP300H">
+placeholder="Se completa automáticamente"
+readonly>
 
 
-<label>Cantidad</label>
+<div id="resultadoMaterial"></div>
+
+
+<label>Cantidad (kg)</label>
 
 <input
 id="cantidad"
 type="number"
-placeholder="Cantidad">
+step="0.01"
+placeholder="Ingrese los kg">
 
 
 <label>Lote</label>
@@ -182,12 +202,17 @@ type="text"
 placeholder="Lote">
 
 
-<label>Ubicación</label>
+<label>Destino</label>
 
-<input
+<select
 id="ubicacion"
-type="text"
-value="WIP">
+style="width:100%;min-height:50px;border:1px solid #bbb;border-radius:9px;padding:12px;font-size:17px;">
+
+<option value="WIP EXTRUSION">WIP EXTRUSIÓN</option>
+
+<option value="WIP INYECCION">WIP INYECCIÓN</option>
+
+</select>
 
 
 <button
@@ -203,21 +228,64 @@ TRANSFERIR A WIP
 
 </div>
 
-
 </main>
 
 
 <script>
 
 /*
-=================================================
-URL DE TU WEB APP DE GOOGLE APPS SCRIPT
-=================================================
+====================================================
+WEB APP DE GOOGLE APPS SCRIPT
+====================================================
 */
 
 const URL_APPS_SCRIPT =
 "https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
 
+
+/*
+====================================================
+MATERIAS PRIMAS
+====================================================
+*/
+
+const MATERIALES = {
+
+  "MNAPP":
+  "MASTER",
+
+  "S1100":
+  "PC",
+
+  "ABS FR11":
+  "ABS BLANCO",
+
+  "HYS6200":
+  "PP EXTRUSION HOMO PETROCUYO",
+
+  "EP300H":
+  "PP EXTRUSION COPO LYONDELL",
+
+  "CP741":
+  "PP EXTRUSION COPO BRASKEM",
+
+  "CP241":
+  "PP INYECCION COPO BRASKEM",
+
+  "5003 GR 80":
+  "PC GRIS - FLUIDEZ ARGENTINO",
+
+  "5000 CR00":
+  "PC TRANSPARENTE ARGENTINO"
+
+};
+
+
+/*
+====================================================
+VARIABLES DE CÁMARA
+====================================================
+*/
 
 let stream = null;
 
@@ -227,9 +295,9 @@ let escaneando = false;
 
 
 /*
-=================================================
+====================================================
 INICIAR CÁMARA
-=================================================
+====================================================
 */
 
 async function iniciarCamara(){
@@ -242,7 +310,8 @@ document.getElementById("mensaje");
 
 try{
 
-stream = await navigator.mediaDevices.getUserMedia({
+stream =
+await navigator.mediaDevices.getUserMedia({
 
 video:{
 facingMode:{
@@ -255,24 +324,29 @@ audio:false
 });
 
 
-video.srcObject = stream;
+video.srcObject =
+stream;
 
-video.style.display = "block";
-
-document.getElementById("btnEscanear").style.display =
-"none";
-
-document.getElementById("btnDetener").style.display =
+video.style.display =
 "block";
 
 
+document.getElementById("btnEscanear")
+.style.display="none";
+
+
+document.getElementById("btnDetener")
+.style.display="block";
+
+
 /*
-Intentamos utilizar BarcodeDetector
+Detector de códigos
 */
 
 if("BarcodeDetector" in window){
 
-detector = new BarcodeDetector({
+detector =
+new BarcodeDetector({
 
 formats:[
 
@@ -283,21 +357,22 @@ formats:[
 "upc_a",
 "upc_e",
 "itf",
-"codabar",
-"qr_code"
+"codabar"
 
 ]
 
 });
 
-escaneando = true;
+escaneando=true;
 
 buscarCodigo();
 
 }else{
 
-mensaje.innerHTML =
-"⚠️ Tu navegador no tiene lector de código incorporado. Puedes ingresar el código manualmente.";
+mensaje.className="error";
+
+mensaje.innerHTML=
+"⚠️ El navegador no permite lectura automática.";
 
 }
 
@@ -305,8 +380,9 @@ mensaje.innerHTML =
 
 mensaje.className="error";
 
-mensaje.innerHTML =
-"❌ No se pudo abrir la cámara: " + error.message;
+mensaje.innerHTML=
+"❌ No se pudo abrir la cámara: "
++ error.message;
 
 }
 
@@ -314,9 +390,9 @@ mensaje.innerHTML =
 
 
 /*
-=================================================
+====================================================
 BUSCAR CÓDIGO
-=================================================
+====================================================
 */
 
 async function buscarCodigo(){
@@ -330,24 +406,20 @@ return;
 const video =
 document.getElementById("video");
 
+
 try{
 
 const codigos =
 await detector.detect(video);
 
-if(codigos.length > 0){
+
+if(codigos.length>0){
 
 const codigoLeido =
-codigos[0].rawValue;
+codigos[0].rawValue.trim();
 
-document.getElementById("codigo").value =
-codigoLeido;
 
-document.getElementById("mensaje").className =
-"ok";
-
-document.getElementById("mensaje").innerHTML =
-"✅ Código leído: " + codigoLeido;
+procesarCodigo(codigoLeido);
 
 detenerCamara();
 
@@ -356,8 +428,6 @@ return;
 }
 
 }catch(error){
-
-// Continuar buscando
 
 }
 
@@ -368,99 +438,220 @@ requestAnimationFrame(buscarCodigo);
 
 
 /*
-=================================================
-DETENER CÁMARA
-=================================================
+====================================================
+PROCESAR CÓDIGO
+====================================================
 */
 
-function detenerCamara(){
+function procesarCodigo(codigo){
 
-escaneando = false;
+const codigoNormalizado =
+codigo.trim().toUpperCase();
 
-if(stream){
 
-stream.getTracks().forEach(function(track){
+const material =
+MATERIALES[codigoNormalizado];
 
-track.stop();
 
-});
+const campoCodigo =
+document.getElementById("codigo");
 
-stream = null;
+const campoMaterial =
+document.getElementById("material");
+
+const resultado =
+document.getElementById("resultadoMaterial");
+
+const mensaje =
+document.getElementById("mensaje");
+
+
+/*
+Mostrar código
+*/
+
+campoCodigo.value =
+codigoNormalizado;
+
+
+/*
+Buscar descripción
+*/
+
+if(material){
+
+campoMaterial.value =
+material;
+
+
+resultado.className =
+"material-ok";
+
+
+resultado.innerHTML =
+"✅ MATERIAL IDENTIFICADO<br>" +
+material;
+
+
+mensaje.className="ok";
+
+mensaje.innerHTML =
+"✅ Código leído correctamente";
+
+
+}else{
+
+campoMaterial.value="";
+
+
+resultado.className =
+"material-error";
+
+
+resultado.innerHTML =
+"⚠️ CÓDIGO NO REGISTRADO<br>" +
+codigoNormalizado;
+
+
+mensaje.className="error";
+
+mensaje.innerHTML =
+"⚠️ Esta materia prima no está registrada";
 
 }
-
-const video =
-document.getElementById("video");
-
-video.srcObject = null;
-
-video.style.display = "none";
-
-
-document.getElementById("btnEscanear").style.display =
-"block";
-
-document.getElementById("btnDetener").style.display =
-"none";
 
 }
 
 
 /*
-=================================================
+====================================================
+DETENER CÁMARA
+====================================================
+*/
+
+function detenerCamara(){
+
+escaneando=false;
+
+
+if(stream){
+
+stream.getTracks().forEach(
+function(track){
+
+track.stop();
+
+});
+
+stream=null;
+
+}
+
+
+const video =
+document.getElementById("video");
+
+video.srcObject=null;
+
+video.style.display="none";
+
+
+document.getElementById("btnEscanear")
+.style.display="block";
+
+
+document.getElementById("btnDetener")
+.style.display="none";
+
+}
+
+
+/*
+====================================================
 TRANSFERIR A WIP
-=================================================
+====================================================
 */
 
 async function transferir(){
 
 const codigo =
-document.getElementById("codigo").value.trim();
+document.getElementById("codigo")
+.value.trim();
+
 
 const material =
-document.getElementById("material").value.trim();
+document.getElementById("material")
+.value.trim();
+
 
 const cantidad =
-document.getElementById("cantidad").value;
+document.getElementById("cantidad")
+.value;
+
 
 const lote =
-document.getElementById("lote").value.trim();
+document.getElementById("lote")
+.value.trim();
+
 
 const ubicacion =
-document.getElementById("ubicacion").value.trim();
+document.getElementById("ubicacion")
+.value;
+
 
 const mensaje =
 document.getElementById("mensaje");
 
+
 const boton =
 document.getElementById("btnTransferir");
 
+
+/*
+Validaciones
+*/
 
 if(!codigo){
 
 mensaje.className="error";
 
 mensaje.innerHTML =
-"⚠️ Escanea o ingresa el código";
+"⚠️ Primero escanee la materia prima";
 
 return;
 
 }
 
 
-if(!cantidad){
+if(!material){
 
 mensaje.className="error";
 
 mensaje.innerHTML =
-"⚠️ Ingresa la cantidad";
+"⚠️ Código de materia prima no registrado";
 
 return;
 
 }
 
 
-const datos = {
+if(!cantidad || Number(cantidad)<=0){
+
+mensaje.className="error";
+
+mensaje.innerHTML =
+"⚠️ Ingrese la cantidad en kg";
+
+return;
+
+}
+
+
+/*
+Datos a enviar
+*/
+
+const datos={
 
 codigo:codigo,
 
@@ -479,6 +670,7 @@ movimiento:"TRANSFERENCIA_A_WIP"
 
 boton.disabled=true;
 
+
 mensaje.className="";
 
 mensaje.innerHTML =
@@ -487,28 +679,31 @@ mensaje.innerHTML =
 
 try{
 
-/*
-Enviamos los datos a Apps Script.
-*/
+await fetch(
 
-await fetch(URL_APPS_SCRIPT,{
+URL_APPS_SCRIPT,
+
+{
 
 method:"POST",
 
 mode:"no-cors",
 
 headers:{
-"Content-Type":"text/plain;charset=utf-8"
+
+"Content-Type":
+"text/plain;charset=utf-8"
+
 },
 
-body:JSON.stringify(datos)
+body:
+JSON.stringify(datos)
 
 });
 
 
 /*
-El modo no-cors no permite leer la respuesta,
-pero el POST sí se envía al Web App.
+Movimiento enviado
 */
 
 mensaje.className="ok";
@@ -517,13 +712,24 @@ mensaje.innerHTML =
 "✅ MOVIMIENTO REGISTRADO";
 
 
-document.getElementById("codigo").value="";
+/*
+Limpiar formulario
+*/
 
-document.getElementById("material").value="";
+document.getElementById("codigo")
+.value="";
 
-document.getElementById("cantidad").value="";
+document.getElementById("material")
+.value="";
 
-document.getElementById("lote").value="";
+document.getElementById("cantidad")
+.value="";
+
+document.getElementById("lote")
+.value="";
+
+document.getElementById("resultadoMaterial")
+.innerHTML="";
 
 
 }catch(error){
@@ -531,7 +737,8 @@ document.getElementById("lote").value="";
 mensaje.className="error";
 
 mensaje.innerHTML =
-"❌ Error al enviar: " + error.message;
+"❌ ERROR AL ENVIAR: "
++error.message;
 
 }
 
