@@ -1,95 +1,547 @@
 <!doctype html>
 <html lang="es">
+
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1,viewport-fit=cover">
+
 <meta name="theme-color" content="#0b57d0">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg">
+
 <title>WIP Scanner</title>
+
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#17202a}
-header{background:#0b57d0;color:#fff;padding:18px;font-size:24px;font-weight:700}
-main{max-width:620px;margin:auto;padding:15px}.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px #0001}
-label{display:block;font-weight:700;margin:10px 0 6px}
-input,button{width:100%;min-height:50px;border-radius:9px;border:1px solid #bbb;padding:12px;font-size:17px}
-button{background:#0b57d0;color:#fff;border:0;font-weight:700;margin-top:10px}
-button.secondary{background:#5f6368}.status{padding:12px;border-radius:9px;background:#eef3f8;margin-top:10px}
-.ok{background:#dff6e4}.err{background:#fde7e7}
-#video{width:100%;background:#111;border-radius:12px;display:none}
-.small{font-size:13px;color:#5f6368}
+
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#f4f6f8;
+color:#17202a;
+}
+
+header{
+background:#0b57d0;
+color:white;
+padding:18px;
+font-size:24px;
+font-weight:700;
+text-align:center;
+}
+
+main{
+max-width:620px;
+margin:auto;
+padding:15px;
+}
+
+.card{
+background:white;
+border-radius:14px;
+padding:16px;
+margin-bottom:14px;
+box-shadow:0 2px 8px #0001;
+}
+
+label{
+display:block;
+font-weight:700;
+margin:10px 0 6px;
+}
+
+input,
+button{
+width:100%;
+min-height:50px;
+border:1px solid #bbb;
+border-radius:9px;
+padding:12px;
+font-size:17px;
+}
+
+button{
+background:#0b57d0;
+color:white;
+border:0;
+font-weight:700;
+margin-top:10px;
+}
+
+button.secondary{
+background:#5f6368;
+}
+
+button:disabled{
+opacity:.6;
+}
+
+#video{
+width:100%;
+background:#111;
+border-radius:12px;
+display:none;
+margin-top:12px;
+}
+
+#mensaje{
+margin-top:15px;
+font-weight:700;
+text-align:center;
+}
+
+.ok{
+color:#188038;
+}
+
+.error{
+color:#d93025;
+}
+
 </style>
+
 </head>
+
+
 <body>
-<header>📦 WIP SCANNER</header>
+
+<header>
+📦 WIP SCANNER
+</header>
+
+
 <main>
-<div class="card">
-<div class="small">Escaneá el Code 128 de tu etiqueta WIP.</div>
-<video id="video" playsinline></video>
-<button id="scan">📷 ESCANEAR CÓDIGO</button>
-<button id="stop" class="secondary">⏹ DETENER</button>
-<div id="status" class="status">Listo para escanear.</div>
-</div>
+
 
 <div class="card">
-<label>Código</label><input id="codigo" placeholder="Ej.: EP300H">
-<label>Material</label><input id="material" placeholder="PP LYONDELL">
-<label>Cantidad (kg)</label><input id="cantidad" type="number" step="0.01" placeholder="Ej.: 500">
-<label>Lote</label><input id="lote" placeholder="Ej.: PRUEBA-001">
-<label>Ubicación WIP</label><input id="ubicacion" value="WIP-EXT-001">
-<button id="send">➡️ ENVIAR</button>
+
+<button
+id="btnEscanear"
+onclick="iniciarCamara()">
+
+📷 ESCANEAR CÓDIGO
+
+</button>
+
+
+<video
+id="video"
+autoplay
+playsinline>
+</video>
+
+
+<button
+id="btnDetener"
+class="secondary"
+onclick="detenerCamara()"
+style="display:none">
+
+⏹ DETENER CÁMARA
+
+</button>
+
 </div>
 
+
 <div class="card">
-<label>URL de recepción</label>
-<input id="endpoint" placeholder="URL de tu servicio de Excel">
-<div class="small">La URL se guarda en este teléfono. Puede conectarse luego a tu sistema de Excel.</div>
+
+<label>Código</label>
+
+<input
+id="codigo"
+type="text"
+placeholder="Código de materia prima">
+
+
+<label>Material</label>
+
+<input
+id="material"
+type="text"
+placeholder="Ej: PP EP300H">
+
+
+<label>Cantidad</label>
+
+<input
+id="cantidad"
+type="number"
+placeholder="Cantidad">
+
+
+<label>Lote</label>
+
+<input
+id="lote"
+type="text"
+placeholder="Lote">
+
+
+<label>Ubicación</label>
+
+<input
+id="ubicacion"
+type="text"
+value="WIP">
+
+
+<button
+id="btnTransferir"
+onclick="transferir()">
+
+TRANSFERIR A WIP
+
+</button>
+
+
+<div id="mensaje"></div>
+
 </div>
+
+
 </main>
 
+
 <script>
-const $=id=>document.getElementById(id);
-let stream=null, detector=null, running=false;
-function status(t,ok=false,err=false){$("status").textContent=t;$("status").className="status "+(ok?"ok":"")+(err?" err":"");}
-async function start(){
- if(!("BarcodeDetector" in window)){status("Este navegador no tiene BarcodeDetector. En Chrome/Edge actualizado puede estar disponible.",false,true);return}
- try{
-  const formats=await BarcodeDetector.getSupportedFormats();
-  if(!formats.includes("code_128")){status("El navegador no informa soporte para Code 128.",false,true);return}
-  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}}});
-  $("video").srcObject=stream;$("video").style.display="block";await $("video").play();
-  detector=new BarcodeDetector({formats:["code_128"]});running=true;status("Apuntá la cámara al código...");
-  loop();
- }catch(e){status("No se pudo abrir la cámara: "+e.message,false,true)}
+
+/*
+=================================================
+URL DE TU WEB APP DE GOOGLE APPS SCRIPT
+=================================================
+*/
+
+const URL_APPS_SCRIPT =
+"https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
+
+
+let stream = null;
+
+let detector = null;
+
+let escaneando = false;
+
+
+/*
+=================================================
+INICIAR CÁMARA
+=================================================
+*/
+
+async function iniciarCamara(){
+
+const video =
+document.getElementById("video");
+
+const mensaje =
+document.getElementById("mensaje");
+
+try{
+
+stream = await navigator.mediaDevices.getUserMedia({
+
+video:{
+facingMode:{
+ideal:"environment"
 }
-async function loop(){
- if(!running)return;
- try{
-  const codes=await detector.detect($("video"));
-  if(codes.length && codes[0].rawValue){
-   $("codigo").value=codes[0].rawValue;
-   status("Código leído: "+codes[0].rawValue,true);
-   navigator.vibrate?.(120);
-   stop();
-  }
- }catch(e){}
- requestAnimationFrame(loop);
+},
+
+audio:false
+
+});
+
+
+video.srcObject = stream;
+
+video.style.display = "block";
+
+document.getElementById("btnEscanear").style.display =
+"none";
+
+document.getElementById("btnDetener").style.display =
+"block";
+
+
+/*
+Intentamos utilizar BarcodeDetector
+*/
+
+if("BarcodeDetector" in window){
+
+detector = new BarcodeDetector({
+
+formats:[
+
+"code_128",
+"code_39",
+"ean_13",
+"ean_8",
+"upc_a",
+"upc_e",
+"itf",
+"codabar",
+"qr_code"
+
+]
+
+});
+
+escaneando = true;
+
+buscarCodigo();
+
+}else{
+
+mensaje.innerHTML =
+"⚠️ Tu navegador no tiene lector de código incorporado. Puedes ingresar el código manualmente.";
+
 }
-function stop(){running=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$("video").style.display="none"}
-$("scan").onclick=start;$("stop").onclick=stop;
-$("endpoint").value=localStorage.endpoint||"https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
-$("endpoint").onchange=()=>localStorage.endpoint=$("endpoint").value.trim();
-$("send").onclick=async()=>{
- const p={codigo:$("codigo").value.trim(),material:$("material").value.trim(),cantidad:Number($("cantidad").value||0),lote:$("lote").value.trim(),ubicacion:$("ubicacion").value.trim(),fecha_hora:new Date().toISOString(),movimiento:"TRANSFERENCIA_A_WIP"};
- if(!p.codigo){status("Primero escaneá un código.",false,true);return}
- const url=$("endpoint").value.trim();
- if(!url){status("El código quedó capturado. Falta configurar la URL de recepción.",true);return}
- try{
-  await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p),keepalive:true});
-  status("Movimiento enviado. Verificá REGISTRO WIP para confirmar la recepción.",true);
- }catch(e){status("No se pudo enviar. Revisá la conexión.",false,true)}
+
+}catch(error){
+
+mensaje.className="error";
+
+mensaje.innerHTML =
+"❌ No se pudo abrir la cámara: " + error.message;
+
+}
+
+}
+
+
+/*
+=================================================
+BUSCAR CÓDIGO
+=================================================
+*/
+
+async function buscarCodigo(){
+
+if(!escaneando || !detector){
+
+return;
+
+}
+
+const video =
+document.getElementById("video");
+
+try{
+
+const codigos =
+await detector.detect(video);
+
+if(codigos.length > 0){
+
+const codigoLeido =
+codigos[0].rawValue;
+
+document.getElementById("codigo").value =
+codigoLeido;
+
+document.getElementById("mensaje").className =
+"ok";
+
+document.getElementById("mensaje").innerHTML =
+"✅ Código leído: " + codigoLeido;
+
+detenerCamara();
+
+return;
+
+}
+
+}catch(error){
+
+// Continuar buscando
+
+}
+
+
+requestAnimationFrame(buscarCodigo);
+
+}
+
+
+/*
+=================================================
+DETENER CÁMARA
+=================================================
+*/
+
+function detenerCamara(){
+
+escaneando = false;
+
+if(stream){
+
+stream.getTracks().forEach(function(track){
+
+track.stop();
+
+});
+
+stream = null;
+
+}
+
+const video =
+document.getElementById("video");
+
+video.srcObject = null;
+
+video.style.display = "none";
+
+
+document.getElementById("btnEscanear").style.display =
+"block";
+
+document.getElementById("btnDetener").style.display =
+"none";
+
+}
+
+
+/*
+=================================================
+TRANSFERIR A WIP
+=================================================
+*/
+
+async function transferir(){
+
+const codigo =
+document.getElementById("codigo").value.trim();
+
+const material =
+document.getElementById("material").value.trim();
+
+const cantidad =
+document.getElementById("cantidad").value;
+
+const lote =
+document.getElementById("lote").value.trim();
+
+const ubicacion =
+document.getElementById("ubicacion").value.trim();
+
+const mensaje =
+document.getElementById("mensaje");
+
+const boton =
+document.getElementById("btnTransferir");
+
+
+if(!codigo){
+
+mensaje.className="error";
+
+mensaje.innerHTML =
+"⚠️ Escanea o ingresa el código";
+
+return;
+
+}
+
+
+if(!cantidad){
+
+mensaje.className="error";
+
+mensaje.innerHTML =
+"⚠️ Ingresa la cantidad";
+
+return;
+
+}
+
+
+const datos = {
+
+codigo:codigo,
+
+material:material,
+
+cantidad:cantidad,
+
+lote:lote,
+
+ubicacion:ubicacion,
+
+movimiento:"TRANSFERENCIA_A_WIP"
+
 };
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+
+
+boton.disabled=true;
+
+mensaje.className="";
+
+mensaje.innerHTML =
+"⏳ Registrando movimiento...";
+
+
+try{
+
+/*
+Enviamos los datos a Apps Script.
+*/
+
+await fetch(URL_APPS_SCRIPT,{
+
+method:"POST",
+
+mode:"no-cors",
+
+headers:{
+"Content-Type":"text/plain;charset=utf-8"
+},
+
+body:JSON.stringify(datos)
+
+});
+
+
+/*
+El modo no-cors no permite leer la respuesta,
+pero el POST sí se envía al Web App.
+*/
+
+mensaje.className="ok";
+
+mensaje.innerHTML =
+"✅ MOVIMIENTO REGISTRADO";
+
+
+document.getElementById("codigo").value="";
+
+document.getElementById("material").value="";
+
+document.getElementById("cantidad").value="";
+
+document.getElementById("lote").value="";
+
+
+}catch(error){
+
+mensaje.className="error";
+
+mensaje.innerHTML =
+"❌ Error al enviar: " + error.message;
+
+}
+
+
+boton.disabled=false;
+
+}
+
 </script>
+
 </body>
+
 </html>
