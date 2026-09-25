@@ -77,7 +77,7 @@ async function loop(){
 }
 function stop(){running=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$("video").style.display="none"}
 $("scan").onclick=start;$("stop").onclick=stop;
-$("endpoint").value=localStorage.endpoint||"";
+$("endpoint").value=localStorage.endpoint||"https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
 $("endpoint").onchange=()=>localStorage.endpoint=$("endpoint").value.trim();
 $("send").onclick=async()=>{
  const p={codigo:$("codigo").value.trim(),material:$("material").value.trim(),cantidad:Number($("cantidad").value||0),lote:$("lote").value.trim(),ubicacion:$("ubicacion").value.trim(),fecha_hora:new Date().toISOString(),movimiento:"TRANSFERENCIA_A_WIP"};
@@ -85,7 +85,7 @@ $("send").onclick=async()=>{
  const url=$("endpoint").value.trim();
  if(!url){status("El código quedó capturado. Falta configurar la URL de recepción.",true);return}
  try{
-  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)});
   if(!r.ok)throw new Error("HTTP "+r.status);
   status("Movimiento enviado correctamente.",true);
  }catch(e){status("No se pudo enviar. Revisá la conexión.",false,true)}
