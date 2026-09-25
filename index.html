@@ -452,8 +452,15 @@ const codigoNormalizado =
 codigo.trim().toUpperCase();
 
 
-const material =
-MATERIALES[codigoNormalizado];
+let material = MATERIALES[codigoNormalizado];
+
+if (codigoNormalizado === "5003GR80+") {
+  material = "PC GRIS + FLUIDEZ ARGENTINO";
+}
+
+if (codigoNormalizado === "5003GR80-") {
+  material = "PC GRIS - FLUIDEZ ARGENTINO";
+}
 
 
 const campoCodigo =
