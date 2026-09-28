@@ -687,70 +687,30 @@ mensaje.innerHTML =
 "⏳ Registrando movimiento...";
 
 
-try{
+try {
 
-await fetch(
+  const respuesta = await fetch(URL_APPS_SCRIPT, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(datos)
+  });
 
-URL_APPS_SCRIPT,
+  console.log("ENVIO REALIZADO");
 
-{
+  mensaje.className = "ok";
+  mensaje.innerHTML = "✅ ENVÍO REALIZADO";
 
-method:"POST",
+} catch (error) {
 
-mode:"no-cors",
-
-headers:{
-
-"Content-Type":
-"text/plain;charset=utf-8"
-
-},
-
-body:
-JSON.stringify(datos)
-
-});
-
-
-/*
-Movimiento enviado
-*/
-
-mensaje.className="ok";
-
-mensaje.innerHTML =
-"✅ MOVIMIENTO REGISTRADO";
-
-
-/*
-Limpiar formulario
-*/
-
-document.getElementById("codigo")
-.value="";
-
-document.getElementById("material")
-.value="";
-
-document.getElementById("cantidad")
-.value="";
-
-document.getElementById("lote")
-.value="";
-
-document.getElementById("resultadoMaterial")
-.innerHTML="";
-
-
-}catch(error){
-
-mensaje.className="error";
-
-mensaje.innerHTML =
-"❌ ERROR AL ENVIAR: "
-+error.message;
+  mensaje.className = "error";
+  mensaje.innerHTML =
+    "❌ ERROR AL ENVIAR: " + error.message;
 
 }
+PERO IMPORTANTE
 
 
 boton.disabled=false;
