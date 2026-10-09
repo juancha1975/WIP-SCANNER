@@ -1,183 +1,172 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WIP SCANNER</title>
-  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f2f4f7; margin: 0; padding: 18px; color: #222; }
-    .contenedor { max-width: 500px; margin: auto; background: #fff; padding: 22px; border-radius: 15px; box-shadow: 0 3px 12px rgba(0,0,0,.15); }
-    h1 { text-align: center; margin: 0 0 18px; font-size: 28px; }
-    label { display: block; font-weight: bold; margin-top: 14px; }
-    input, select { width: 100%; padding: 13px; margin-top: 6px; border: 2px solid #999; border-radius: 8px; font-size: 18px; background: #fff; color: #111; }
-    input:focus, select:focus { border-color: #0d6efd; outline: none; }
-    button { width: 100%; padding: 15px; margin-top: 16px; border: none; border-radius: 8px; font-size: 17px; font-weight: bold; cursor: pointer; }
-    button:disabled { opacity: .6; cursor: wait; }
-    .manual { background: #6c757d; color: #fff; }
-    .escanear { background: #0d6efd; color: #fff; }
-    .transferir { background: #198754; color: #fff; }
-    .detener { background: #dc3545; color: #fff; }
-    #lector { width: 100%; margin-top: 14px; display: none; overflow: hidden; }
-    #mensaje { text-align: center; margin-top: 18px; font-weight: bold; font-size: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .ayuda { text-align: center; margin-top: 8px; font-size: 14px; color: #666; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WIP SCANNER</title>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box} body{font-family:Arial,sans-serif;background:#f2f4f7;margin:0;padding:18px;color:#222}
+.contenedor{max-width:500px;margin:auto;background:#fff;padding:22px;border-radius:15px;box-shadow:0 3px 12px rgba(0,0,0,.15)}
+h1{text-align:center;margin:0 0 18px;font-size:28px} label{display:block;font-weight:bold;margin-top:14px}
+input,select{width:100%;padding:13px;margin-top:6px;border:2px solid #999;border-radius:8px;font-size:18px;background:#fff;color:#111}
+input:focus,select:focus{border-color:#0d6efd;outline:none} button{width:100%;padding:15px;margin-top:16px;border:none;border-radius:8px;font-size:17px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}.manual{background:#6c757d;color:#fff}.escanear{background:#0d6efd;color:#fff}.transferir{background:#198754;color:#fff}.detener{background:#dc3545;color:#fff}
+#lector{width:100%;margin-top:14px;display:none;overflow:hidden} #mensaje{text-align:center;margin-top:18px;font-weight:bold;font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere}
+.ayuda{text-align:center;margin-top:8px;font-size:14px;color:#666}
+</style>
 </head>
 <body>
 <div class="contenedor">
-  <h1>📦 WIP SCANNER</h1>
-  <button type="button" class="manual" onclick="habilitarCodigo()">⌨️ INGRESAR CÓDIGO MANUALMENTE</button>
-  <button type="button" class="escanear" id="botonEscanear" onclick="iniciarScanner()">📷 ESCANEAR CÓDIGO</button>
-  <button type="button" class="detener" id="botonDetener" onclick="detenerScanner()" style="display:none">DETENER CÁMARA</button>
-  <div id="lector"></div>
+<h1>📦 WIP SCANNER</h1>
+<button type="button" class="manual" onclick="habilitarCodigo()">⌨️ INGRESAR CÓDIGO MANUALMENTE</button>
+<button type="button" class="escanear" id="botonEscanear" onclick="iniciarScanner()">📷 ESCANEAR CÓDIGO</button>
+<button type="button" class="detener" id="botonDetener" onclick="detenerScanner()" style="display:none">DETENER CÁMARA</button>
+<div id="lector"></div>
 
-  <label for="codigo">Código de materia prima</label>
-  <input type="text" id="codigo" placeholder="Ejemplo: PPMCM" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text">
-  <div class="ayuda">Puedes escribir el código o escanearlo.</div>
+<label for="codigo">Código de materia prima</label>
+<input type="text" id="codigo" placeholder="Ejemplo: PPMCM" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text">
+<div class="ayuda">Puedes escribir el código o escanearlo.</div>
 
-  <label for="material">Material</label>
-  <input type="text" id="material" placeholder="Ej.: PP MULTICOLOR MOLIDO">
-  <label for="cantidad">Cantidad (kg)</label>
-  <input type="number" id="cantidad" placeholder="Cantidad en kg" min="0" step="any" inputmode="decimal">
-  <label for="lote">Lote</label>
-  <input type="text" id="lote" placeholder="Lote">
-  <label for="ubicacion">Destino WIP</label>
-  <select id="ubicacion">
-    <option value="WIP INYECCION">WIP INYECCION</option>
-    <option value="WIP EXTRUSION">WIP EXTRUSION</option>
-  </select>
-  <button type="button" class="transferir" id="botonTransferir" onclick="registrar()">TRANSFERIR A WIP</button>
-  <div id="mensaje" role="status" aria-live="polite"></div>
+<label for="material">Material</label>
+<input type="text" id="material" placeholder="Ej.: PP MULTICOLOR MOLIDO" readonly>
+
+<label for="cantidad">Cantidad (kg)</label>
+<input type="number" id="cantidad" placeholder="Cantidad en kg" min="0" step="any" inputmode="decimal">
+
+<label for="lote">Lote</label>
+<input type="text" id="lote" placeholder="Lote">
+
+<label for="ubicacion">Destino WIP</label>
+<select id="ubicacion">
+<option value="WIP INYECCION">WIP INYECCION</option>
+<option value="WIP EXTRUSION">WIP EXTRUSION</option>
+</select>
+
+<button type="button" class="transferir" id="botonTransferir" onclick="registrar()">TRANSFERIR A WIP</button>
+<div id="mensaje" role="status" aria-live="polite"></div>
 </div>
 
 <script>
-const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
-let scanner = null;
-let iniciandoScanner = false;
+const URL_APPS_SCRIPT="https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
+let scanner=null;
+let iniciandoScanner=false;
 
-function habilitarCodigo() {
-  const campo = document.getElementById("codigo");
-  campo.focus();
-  campo.select();
-  document.getElementById("mensaje").textContent = "⌨️ Escribe el código de materia prima.";
+function habilitarCodigo(){
+ const campo=document.getElementById("codigo");
+ campo.removeAttribute("readonly");
+ campo.focus();
+ campo.select();
+ document.getElementById("mensaje").textContent="⌨️ Escribe el código de materia prima y presiona Enter.";
 }
 
-async function iniciarScanner() {
-  const mensaje = document.getElementById("mensaje");
-  const lector = document.getElementById("lector");
-
-  if (iniciandoScanner) return;
-  if (typeof Html5Qrcode === "undefined") {
-    mensaje.textContent = "❌ No se cargó la biblioteca del escáner. Comprueba la conexión a Internet y recarga la página.";
-    return;
+async function buscarMaterial(codigo){
+ const mensaje=document.getElementById("mensaje");
+ const campo=document.getElementById("material");
+ codigo=String(codigo||"").trim();
+ if(!codigo){campo.value="";return;}
+ mensaje.textContent="🔎 Buscando material para "+codigo+"...";
+ try{
+  const respuesta=await fetch(URL_APPS_SCRIPT+"?accion=buscarMaterial&codigo="+encodeURIComponent(codigo),{method:"GET",cache:"no-store"});
+  if(!respuesta.ok) throw new Error("HTTP "+respuesta.status);
+  const datos=await respuesta.json();
+  if(datos.encontrado){
+   campo.value=datos.material||"";
+   mensaje.textContent="✅ Código: "+codigo+"\nMaterial: "+datos.material;
+  }else{
+   campo.value="";
+   mensaje.textContent="⚠️ El código "+codigo+" no está registrado en CONSUMO INYECCION.";
   }
-  if (!window.isSecureContext) {
-    mensaje.textContent = "❌ La cámara requiere una página HTTPS. Abre el enlace publicado de GitHub Pages.";
-    return;
-  }
-
-  iniciandoScanner = true;
-  document.getElementById("botonEscanear").disabled = true;
-  lector.style.display = "block";
-  document.getElementById("botonDetener").style.display = "block";
-
-  try {
-    if (scanner) {
-      try { await scanner.stop(); } catch (e) {}
-      try { await scanner.clear(); } catch (e) {}
-      scanner = null;
-    }
-
-    scanner = new Html5Qrcode("lector");
-    await scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 260, height: 150 }, aspectRatio: 1.777778 },
-      async (texto) => {
-        const codigo = String(texto || "").trim();
-        if (!codigo) return;
-        document.getElementById("codigo").value = codigo;
-        mensaje.textContent = "✅ Código leído: " + codigo;
-        await detenerScanner();
-        document.getElementById("codigo").focus();
-      },
-      () => {}
-    );
-    mensaje.textContent = "📷 Cámara activa. Apunta al código de barras.";
-  } catch (error) {
-    console.error("Error de cámara:", error);
-    lector.style.display = "none";
-    document.getElementById("botonDetener").style.display = "none";
-    mensaje.textContent = "❌ No se pudo abrir la cámara.\n" + (error && error.message ? error.message : String(error)) + "\nComprueba que el navegador tenga permiso para usar la cámara.";
-    scanner = null;
-  } finally {
-    iniciandoScanner = false;
-    document.getElementById("botonEscanear").disabled = false;
-  }
+ }catch(error){
+  console.error("Error buscando material:",error);
+  campo.value="";
+  mensaje.textContent="❌ No se pudo consultar el material.\n"+(error.message||error);
+ }
 }
 
-async function detenerScanner() {
-  const lector = document.getElementById("lector");
-  if (scanner) {
-    try { await scanner.stop(); } catch (e) {}
-    try { await scanner.clear(); } catch (e) {}
-    scanner = null;
-  }
-  lector.style.display = "none";
-  document.getElementById("botonDetener").style.display = "none";
-  document.getElementById("botonEscanear").disabled = false;
-}
+document.getElementById("codigo").addEventListener("keydown",function(e){
+ if(e.key==="Enter"){
+  e.preventDefault();
+  const codigo=this.value.trim();
+  if(codigo) buscarMaterial(codigo);
+ }
+});
+document.getElementById("codigo").addEventListener("change",function(){
+ const codigo=this.value.trim();
+ if(codigo) buscarMaterial(codigo);
+});
 
-async function registrar() {
-  const boton = document.getElementById("botonTransferir");
-  const mensaje = document.getElementById("mensaje");
-  const datos = {
-    codigo: document.getElementById("codigo").value.trim(),
-    material: document.getElementById("material").value.trim(),
-    cantidad: document.getElementById("cantidad").value,
-    lote: document.getElementById("lote").value.trim(),
-    ubicacion: document.getElementById("ubicacion").value.trim(),
-    movimiento: "TRANSFERENCIA_A_WIP"
-  };
-
-  if (!datos.codigo) {
-    mensaje.textContent = "⚠️ Ingresa o escanea el código de materia prima.";
+async function iniciarScanner(){
+ const mensaje=document.getElementById("mensaje"),lector=document.getElementById("lector");
+ if(iniciandoScanner)return;
+ if(typeof Html5Qrcode==="undefined"){mensaje.textContent="❌ No se cargó la biblioteca del escáner.";return;}
+ if(!window.isSecureContext){mensaje.textContent="❌ La cámara requiere una página HTTPS.";return;}
+ iniciandoScanner=true;
+ document.getElementById("botonEscanear").disabled=true;
+ lector.style.display="block";
+ document.getElementById("botonDetener").style.display="block";
+ try{
+  if(scanner){try{await scanner.stop()}catch(e){} try{await scanner.clear()}catch(e){} scanner=null;}
+  scanner=new Html5Qrcode("lector");
+  await scanner.start({facingMode:"environment"},{fps:10,qrbox:{width:260,height:150},aspectRatio:1.777778},
+   async function(texto){
+    const codigo=String(texto||"").trim();
+    if(!codigo)return;
+    document.getElementById("codigo").value=codigo;
+    await detenerScanner();
+    await buscarMaterial(codigo);
     document.getElementById("codigo").focus();
-    return;
-  }
-  if (!datos.cantidad || Number(datos.cantidad) <= 0) {
-    mensaje.textContent = "⚠️ Ingresa una cantidad mayor que 0.";
-    document.getElementById("cantidad").focus();
-    return;
-  }
+   },function(){});
+  mensaje.textContent="📷 Cámara activa. Apunta al código de barras.";
+ }catch(error){
+  console.error("Error de cámara:",error);
+  lector.style.display="none";
+  document.getElementById("botonDetener").style.display="none";
+  mensaje.textContent="❌ No se pudo abrir la cámara.\n"+(error&&error.message?error.message:String(error));
+  scanner=null;
+ }finally{
+  iniciandoScanner=false;
+  document.getElementById("botonEscanear").disabled=false;
+ }
+}
 
-  boton.disabled = true;
-  mensaje.textContent = "⏳ Enviando movimiento a Google Sheets…";
+async function detenerScanner(){
+ const lector=document.getElementById("lector");
+ if(scanner){try{await scanner.stop()}catch(e){} try{await scanner.clear()}catch(e){} scanner=null;}
+ lector.style.display="none";
+ document.getElementById("botonDetener").style.display="none";
+ document.getElementById("botonEscanear").disabled=false;
+}
 
-  try {
-    const respuesta = await fetch(URL_APPS_SCRIPT, {
-      method: "POST",
-      redirect: "follow",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(datos)
-    });
-
-    const texto = await respuesta.text();
-    if (!respuesta.ok) throw new Error("Respuesta HTTP " + respuesta.status + (texto ? ": " + texto : ""));
-    if (texto && /error|❌/i.test(texto)) throw new Error(texto);
-
-    mensaje.textContent = "✅ Solicitud enviada al sistema.\nVerifica que el movimiento aparezca en REGISTRO WIP.";
-    document.getElementById("codigo").value = "";
-    document.getElementById("material").value = "";
-    document.getElementById("cantidad").value = "";
-    document.getElementById("lote").value = "";
-    document.getElementById("codigo").focus();
-  } catch (error) {
-    console.error("Error al enviar WIP:", error);
-    mensaje.textContent = "❌ No se pudo confirmar el envío.\n" + (error && error.message ? error.message : String(error)) + "\nRevisa REGISTRO WIP antes de volver a enviar para evitar duplicados.";
-  } finally {
-    boton.disabled = false;
-  }
+async function registrar(){
+ const boton=document.getElementById("botonTransferir"),mensaje=document.getElementById("mensaje");
+ const datos={
+  codigo:document.getElementById("codigo").value.trim(),
+  material:document.getElementById("material").value.trim(),
+  cantidad:document.getElementById("cantidad").value,
+  lote:document.getElementById("lote").value.trim(),
+  ubicacion:document.getElementById("ubicacion").value.trim(),
+  movimiento:"TRANSFERENCIA_A_WIP"
+ };
+ if(!datos.codigo){mensaje.textContent="⚠️ Ingresa o escanea el código de materia prima.";document.getElementById("codigo").focus();return;}
+ if(!datos.cantidad||Number(datos.cantidad)<=0){mensaje.textContent="⚠️ Ingresa una cantidad mayor que 0.";document.getElementById("cantidad").focus();return;}
+ boton.disabled=true;
+ mensaje.textContent="⏳ Enviando movimiento a Google Sheets…";
+ try{
+  const respuesta=await fetch(URL_APPS_SCRIPT,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(datos)});
+  const texto=await respuesta.text();
+  if(!respuesta.ok)throw new Error("Respuesta HTTP "+respuesta.status+(texto?": "+texto:""));
+  if(texto&&/error|❌/i.test(texto))throw new Error(texto);
+  mensaje.textContent="✅ MOVIMIENTO REGISTRADO";
+  document.getElementById("codigo").value="";
+  document.getElementById("material").value="";
+  document.getElementById("cantidad").value="";
+  document.getElementById("lote").value="";
+  document.getElementById("codigo").focus();
+ }catch(error){
+  console.error("Error al enviar WIP:",error);
+  mensaje.textContent="❌ No se pudo confirmar el envío.\n"+(error&&error.message?error.message:error)+"\nRevisa REGISTRO WIP antes de volver a enviar para evitar duplicados.";
+ }finally{boton.disabled=false;}
 }
 </script>
 </body>
