@@ -1,731 +1,184 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-
 <head>
-
-<meta charset="utf-8">
-
-<meta name="viewport"
-content="width=device-width,initial-scale=1,viewport-fit=cover">
-
-<meta name="theme-color" content="#0b57d0">
-
-<title>WIP Scanner</title>
-
-<style>
-
-*{
-box-sizing:border-box;
-}
-
-body{
-margin:0;
-font-family:Arial,sans-serif;
-background:#f4f6f8;
-color:#17202a;
-}
-
-header{
-background:#0b57d0;
-color:white;
-padding:18px;
-font-size:24px;
-font-weight:700;
-text-align:center;
-}
-
-main{
-max-width:620px;
-margin:auto;
-padding:15px;
-}
-
-.card{
-background:white;
-border-radius:14px;
-padding:16px;
-margin-bottom:14px;
-box-shadow:0 2px 8px #0001;
-}
-
-label{
-display:block;
-font-weight:700;
-margin:10px 0 6px;
-}
-
-input,button{
-width:100%;
-min-height:50px;
-border:1px solid #bbb;
-border-radius:9px;
-padding:12px;
-font-size:17px;
-}
-
-button{
-background:#0b57d0;
-color:white;
-border:0;
-font-weight:700;
-margin-top:10px;
-}
-
-button.secondary{
-background:#5f6368;
-}
-
-button:disabled{
-opacity:.6;
-}
-
-#video{
-width:100%;
-background:#111;
-border-radius:12px;
-display:none;
-margin-top:12px;
-}
-
-#mensaje{
-margin-top:15px;
-font-weight:700;
-text-align:center;
-}
-
-.ok{
-color:#188038;
-}
-
-.error{
-color:#d93025;
-}
-
-.material-ok{
-background:#e8f5e9;
-border:2px solid #34a853;
-padding:12px;
-border-radius:9px;
-margin-top:10px;
-font-weight:bold;
-}
-
-.material-error{
-background:#fce8e6;
-border:2px solid #d93025;
-padding:12px;
-border-radius:9px;
-margin-top:10px;
-font-weight:bold;
-}
-
-</style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WIP SCANNER</title>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f2f4f7; margin: 0; padding: 18px; color: #222; }
+    .contenedor { max-width: 500px; margin: auto; background: #fff; padding: 22px; border-radius: 15px; box-shadow: 0 3px 12px rgba(0,0,0,.15); }
+    h1 { text-align: center; margin: 0 0 18px; font-size: 28px; }
+    label { display: block; font-weight: bold; margin-top: 14px; }
+    input, select { width: 100%; padding: 13px; margin-top: 6px; border: 2px solid #999; border-radius: 8px; font-size: 18px; background: #fff; color: #111; }
+    input:focus, select:focus { border-color: #0d6efd; outline: none; }
+    button { width: 100%; padding: 15px; margin-top: 16px; border: none; border-radius: 8px; font-size: 17px; font-weight: bold; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .manual { background: #6c757d; color: #fff; }
+    .escanear { background: #0d6efd; color: #fff; }
+    .transferir { background: #198754; color: #fff; }
+    .detener { background: #dc3545; color: #fff; }
+    #lector { width: 100%; margin-top: 14px; display: none; overflow: hidden; }
+    #mensaje { text-align: center; margin-top: 18px; font-weight: bold; font-size: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .ayuda { text-align: center; margin-top: 8px; font-size: 14px; color: #666; }
+  </style>
 </head>
-
-
 <body>
+<div class="contenedor">
+  <h1>📦 WIP SCANNER</h1>
+  <button type="button" class="manual" onclick="habilitarCodigo()">⌨️ INGRESAR CÓDIGO MANUALMENTE</button>
+  <button type="button" class="escanear" id="botonEscanear" onclick="iniciarScanner()">📷 ESCANEAR CÓDIGO</button>
+  <button type="button" class="detener" id="botonDetener" onclick="detenerScanner()" style="display:none">DETENER CÁMARA</button>
+  <div id="lector"></div>
 
-<header>
-📦 WIP SCANNER
-</header>
+  <label for="codigo">Código de materia prima</label>
+  <input type="text" id="codigo" placeholder="Ejemplo: PPMCM" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text">
+  <div class="ayuda">Puedes escribir el código o escanearlo.</div>
 
-
-<main>
-
-<div class="card">
-
-<button
-id="btnEscanear"
-onclick="iniciarCamara()">
-
-📷 ESCANEAR CÓDIGO
-
-</button>
-
-<video
-id="video"
-autoplay
-playsinline>
-</video>
-
-<button
-id="btnDetener"
-class="secondary"
-onclick="detenerCamara()"
-style="display:none">
-
-⏹ DETENER CÁMARA
-
-</button>
-
+  <label for="material">Material</label>
+  <input type="text" id="material" placeholder="Ej.: PP MULTICOLOR MOLIDO">
+  <label for="cantidad">Cantidad (kg)</label>
+  <input type="number" id="cantidad" placeholder="Cantidad en kg" min="0" step="any" inputmode="decimal">
+  <label for="lote">Lote</label>
+  <input type="text" id="lote" placeholder="Lote">
+  <label for="ubicacion">Destino WIP</label>
+  <select id="ubicacion">
+    <option value="WIP INYECCION">WIP INYECCION</option>
+    <option value="WIP EXTRUSION">WIP EXTRUSION</option>
+  </select>
+  <button type="button" class="transferir" id="botonTransferir" onclick="registrar()">TRANSFERIR A WIP</button>
+  <div id="mensaje" role="status" aria-live="polite"></div>
 </div>
-
-
-<div class="card">
-
-<label>Código</label>
-
-<input
-id="codigo"
-type="text"
-placeholder="Código de materia prima"
-readonly>
-
-
-<label>Material</label>
-
-<input
-id="material"
-type="text"
-placeholder="Se completa automáticamente"
-readonly>
-
-
-<div id="resultadoMaterial"></div>
-
-
-<label>Cantidad (kg)</label>
-
-<input
-id="cantidad"
-type="number"
-step="0.01"
-placeholder="Ingrese los kg">
-
-
-<label>Lote</label>
-
-<input
-id="lote"
-type="text"
-placeholder="Lote">
-
-
-<label>Destino</label>
-
-<select
-id="ubicacion"
-style="width:100%;min-height:50px;border:1px solid #bbb;border-radius:9px;padding:12px;font-size:17px;">
-
-<option value="WIP EXTRUSION">WIP EXTRUSIÓN</option>
-
-<option value="WIP INYECCION">WIP INYECCIÓN</option>
-
-</select>
-
-
-<button
-id="btnTransferir"
-onclick="transferir()">
-
-TRANSFERIR A WIP
-
-</button>
-
-
-<div id="mensaje"></div>
-
-</div>
-
-</main>
-
 
 <script>
+const URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
+let scanner = null;
+let iniciandoScanner = false;
 
-/*
-====================================================
-WEB APP DE GOOGLE APPS SCRIPT
-====================================================
-*/
-
-const URL_APPS_SCRIPT =
-"https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
-
-
-/*
-====================================================
-MATERIAS PRIMAS
-====================================================
-*/
-
-
-
-  const MATERIALES = {
-
-  "MNAPP":
-  "MASTER NARANJA",
-
-  "MAZPP":
-  "MASTER AZUL",
-
-  "ANTILLAMA":
-  "ANTILLAMA",
-
-  "S1100":
-  "PC",
-
-  "ABS FR11":
-  "ABS BLANCO",
-
-  "HYS6200":
-  "PP EXTRUSION HOMO PETROCUYO",
-
-  "EP300H":
-  "PP EXTRUSION COPO LYONDELL",
-
-  "CP741":
-  "PP EXTRUSION COPO BRASKEM",
-
-  "CP241":
-  "PP INYECCION COPO BRASKEM",
-
-  "5003GR80-":
-  "PC GRIS - FLUIDEZ ARGENTINO",
-
-  "5003GR80+":
-  "PC GRIS + FLUIDEZ ARGENTINO",
-
-  "5000 CR00":
-  "PC TRANSPARENTE ARGENTINO"
-
-};
- 
-
-/*
-====================================================
-VARIABLES DE CÁMARA
-====================================================
-*/
-
-let stream = null;
-
-let detector = null;
-
-let escaneando = false;
-
-
-/*
-====================================================
-INICIAR CÁMARA
-====================================================
-*/
-
-async function iniciarCamara(){
-
-const video =
-document.getElementById("video");
-
-const mensaje =
-document.getElementById("mensaje");
-
-try{
-
-stream =
-await navigator.mediaDevices.getUserMedia({
-
-video:{
-facingMode:{
-ideal:"environment"
-}
-},
-
-audio:false
-
-});
-
-
-video.srcObject =
-stream;
-
-video.style.display =
-"block";
-
-
-document.getElementById("btnEscanear")
-.style.display="none";
-
-
-document.getElementById("btnDetener")
-.style.display="block";
-
-
-/*
-Detector de códigos
-*/
-
-if("BarcodeDetector" in window){
-
-detector =
-new BarcodeDetector({
-
-formats:[
-
-"code_128",
-"code_39",
-"ean_13",
-"ean_8",
-"upc_a",
-"upc_e",
-"itf",
-"codabar"
-
-]
-
-});
-
-escaneando=true;
-
-buscarCodigo();
-
-}else{
-
-mensaje.className="error";
-
-mensaje.innerHTML=
-"⚠️ El navegador no permite lectura automática.";
-
+function habilitarCodigo() {
+  const campo = document.getElementById("codigo");
+  campo.focus();
+  campo.select();
+  document.getElementById("mensaje").textContent = "⌨️ Escribe el código de materia prima.";
 }
 
-}catch(error){
+async function iniciarScanner() {
+  const mensaje = document.getElementById("mensaje");
+  const lector = document.getElementById("lector");
 
-mensaje.className="error";
+  if (iniciandoScanner) return;
+  if (typeof Html5Qrcode === "undefined") {
+    mensaje.textContent = "❌ No se cargó la biblioteca del escáner. Comprueba la conexión a Internet y recarga la página.";
+    return;
+  }
+  if (!window.isSecureContext) {
+    mensaje.textContent = "❌ La cámara requiere una página HTTPS. Abre el enlace publicado de GitHub Pages.";
+    return;
+  }
 
-mensaje.innerHTML=
-"❌ No se pudo abrir la cámara: "
-+ error.message;
+  iniciandoScanner = true;
+  document.getElementById("botonEscanear").disabled = true;
+  lector.style.display = "block";
+  document.getElementById("botonDetener").style.display = "block";
 
+  try {
+    if (scanner) {
+      try { await scanner.stop(); } catch (e) {}
+      try { await scanner.clear(); } catch (e) {}
+      scanner = null;
+    }
+
+    scanner = new Html5Qrcode("lector");
+    await scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 260, height: 150 }, aspectRatio: 1.777778 },
+      async (texto) => {
+        const codigo = String(texto || "").trim();
+        if (!codigo) return;
+        document.getElementById("codigo").value = codigo;
+        mensaje.textContent = "✅ Código leído: " + codigo;
+        await detenerScanner();
+        document.getElementById("codigo").focus();
+      },
+      () => {}
+    );
+    mensaje.textContent = "📷 Cámara activa. Apunta al código de barras.";
+  } catch (error) {
+    console.error("Error de cámara:", error);
+    lector.style.display = "none";
+    document.getElementById("botonDetener").style.display = "none";
+    mensaje.textContent = "❌ No se pudo abrir la cámara.\n" + (error && error.message ? error.message : String(error)) + "\nComprueba que el navegador tenga permiso para usar la cámara.";
+    scanner = null;
+  } finally {
+    iniciandoScanner = false;
+    document.getElementById("botonEscanear").disabled = false;
+  }
 }
 
+async function detenerScanner() {
+  const lector = document.getElementById("lector");
+  if (scanner) {
+    try { await scanner.stop(); } catch (e) {}
+    try { await scanner.clear(); } catch (e) {}
+    scanner = null;
+  }
+  lector.style.display = "none";
+  document.getElementById("botonDetener").style.display = "none";
+  document.getElementById("botonEscanear").disabled = false;
 }
 
+async function registrar() {
+  const boton = document.getElementById("botonTransferir");
+  const mensaje = document.getElementById("mensaje");
+  const datos = {
+    codigo: document.getElementById("codigo").value.trim(),
+    material: document.getElementById("material").value.trim(),
+    cantidad: document.getElementById("cantidad").value,
+    lote: document.getElementById("lote").value.trim(),
+    ubicacion: document.getElementById("ubicacion").value.trim(),
+    movimiento: "TRANSFERENCIA_A_WIP"
+  };
 
-/*
-====================================================
-BUSCAR CÓDIGO
-====================================================
-*/
+  if (!datos.codigo) {
+    mensaje.textContent = "⚠️ Ingresa o escanea el código de materia prima.";
+    document.getElementById("codigo").focus();
+    return;
+  }
+  if (!datos.cantidad || Number(datos.cantidad) <= 0) {
+    mensaje.textContent = "⚠️ Ingresa una cantidad mayor que 0.";
+    document.getElementById("cantidad").focus();
+    return;
+  }
 
-async function buscarCodigo(){
+  boton.disabled = true;
+  mensaje.textContent = "⏳ Enviando movimiento a Google Sheets…";
 
-if(!escaneando || !detector){
+  try {
+    const respuesta = await fetch(URL_APPS_SCRIPT, {
+      method: "POST",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(datos)
+    });
 
-return;
+    const texto = await respuesta.text();
+    if (!respuesta.ok) throw new Error("Respuesta HTTP " + respuesta.status + (texto ? ": " + texto : ""));
+    if (texto && /error|❌/i.test(texto)) throw new Error(texto);
 
+    mensaje.textContent = "✅ Solicitud enviada al sistema.\nVerifica que el movimiento aparezca en REGISTRO WIP.";
+    document.getElementById("codigo").value = "";
+    document.getElementById("material").value = "";
+    document.getElementById("cantidad").value = "";
+    document.getElementById("lote").value = "";
+    document.getElementById("codigo").focus();
+  } catch (error) {
+    console.error("Error al enviar WIP:", error);
+    mensaje.textContent = "❌ No se pudo confirmar el envío.\n" + (error && error.message ? error.message : String(error)) + "\nRevisa REGISTRO WIP antes de volver a enviar para evitar duplicados.";
+  } finally {
+    boton.disabled = false;
+  }
 }
-
-const video =
-document.getElementById("video");
-
-
-try{
-
-const codigos =
-await detector.detect(video);
-
-
-if(codigos.length>0){
-
-const codigoLeido =
-codigos[0].rawValue.trim();
-
-
-procesarCodigo(codigoLeido);
-
-detenerCamara();
-
-return;
-
-}
-
-}catch(error){
-
-}
-
-
-requestAnimationFrame(buscarCodigo);
-
-}
-
-
-/*
-====================================================
-PROCESAR CÓDIGO
-====================================================
-*/
-
-function procesarCodigo(codigo){
-
-const codigoNormalizado =
-codigo.trim().toUpperCase();
-
-
-let material = MATERIALES[codigoNormalizado];
-
-if (codigoNormalizado === "5003GR80+") {
-  material = "PC GRIS + FLUIDEZ ARGENTINO";
-}
-
-if (codigoNormalizado === "5003GR80-") {
-  material = "PC GRIS - FLUIDEZ ARGENTINO";
-}
-
-
-const campoCodigo =
-document.getElementById("codigo");
-
-const campoMaterial =
-document.getElementById("material");
-
-const resultado =
-document.getElementById("resultadoMaterial");
-
-const mensaje =
-document.getElementById("mensaje");
-
-
-/*
-Mostrar código
-*/
-
-campoCodigo.value =
-codigoNormalizado;
-
-
-/*
-Buscar descripción
-*/
-
-if(material){
-
-campoMaterial.value =
-material;
-
-
-resultado.className =
-"material-ok";
-
-
-resultado.innerHTML =
-"✅ MATERIAL IDENTIFICADO<br>" +
-material;
-
-
-mensaje.className="ok";
-
-mensaje.innerHTML =
-"✅ Código leído correctamente";
-
-
-}else{
-
-campoMaterial.value="";
-
-
-resultado.className =
-"material-error";
-
-
-resultado.innerHTML =
-"⚠️ CÓDIGO NO REGISTRADO<br>" +
-codigoNormalizado;
-
-
-mensaje.className="error";
-
-mensaje.innerHTML =
-"⚠️ Esta materia prima no está registrada";
-
-}
-
-}
-
-
-/*
-====================================================
-DETENER CÁMARA
-====================================================
-*/
-
-function detenerCamara(){
-
-escaneando=false;
-
-
-if(stream){
-
-stream.getTracks().forEach(
-function(track){
-
-track.stop();
-
-});
-
-stream=null;
-
-}
-
-
-const video =
-document.getElementById("video");
-
-video.srcObject=null;
-
-video.style.display="none";
-
-
-document.getElementById("btnEscanear")
-.style.display="block";
-
-
-document.getElementById("btnDetener")
-.style.display="none";
-
-}
-
-
-/*
-====================================================
-TRANSFERIR A WIP
-====================================================
-*/
-
-async function transferir(){
-
-const codigo =
-document.getElementById("codigo")
-.value.trim();
-
-
-const material =
-document.getElementById("material")
-.value.trim();
-
-
-const cantidad =
-document.getElementById("cantidad")
-.value;
-
-
-const lote =
-document.getElementById("lote")
-.value.trim();
-
-
-const ubicacion =
-document.getElementById("ubicacion")
-.value;
-
-
-const mensaje =
-document.getElementById("mensaje");
-
-
-const boton =
-document.getElementById("btnTransferir");
-
-
-/*
-Validaciones
-*/
-
-if(!codigo){
-
-mensaje.className="error";
-
-mensaje.innerHTML =
-"⚠️ Primero escanee la materia prima";
-
-return;
-
-}
-
-
-if(!material){
-
-mensaje.className="error";
-
-mensaje.innerHTML =
-"⚠️ Código de materia prima no registrado";
-
-return;
-
-}
-
-
-if(!cantidad || Number(cantidad)<=0){
-
-mensaje.className="error";
-
-mensaje.innerHTML =
-"⚠️ Ingrese la cantidad en kg";
-
-return;
-
-}
-
-
-/*
-Datos a enviar
-*/
-
-const datos={
-
-codigo:codigo,
-
-material:material,
-
-cantidad:cantidad,
-
-lote:lote,
-
-ubicacion:ubicacion,
-
-movimiento:"TRANSFERENCIA_A_WIP"
-
-};
-
-
-boton.disabled=true;
-
-
-mensaje.className="";
-
-mensaje.innerHTML =
-"⏳ Registrando movimiento...";
-
-
-try {
-
-  const respuesta = await fetch(URL_APPS_SCRIPT, {
-    method: "POST",
-    mode: "no-cors",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify(datos)
-  });
-
-  console.log("ENVIO REALIZADO");
-
-  mensaje.className = "ok";
-  mensaje.innerHTML = "✅ ENVÍO REALIZADO";
-
-} catch (error) {
-
-  mensaje.className = "error";
-
-  mensaje.innerHTML =
-    "❌ ERROR AL ENVIAR: " + error.message;
-
-}
-
-boton.disabled = false;
-
-}
-
 </script>
-
 </body>
-
 </html>
