@@ -3,54 +3,119 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WIP SCANNER</title>
+<title>SISTEMA DE SCANNER</title>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <style>
-*{box-sizing:border-box} body{font-family:Arial,sans-serif;background:#f2f4f7;margin:0;padding:18px;color:#222}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f2f4f7;margin:0;padding:18px;color:#222}
 .contenedor{max-width:500px;margin:auto;background:#fff;padding:22px;border-radius:15px;box-shadow:0 3px 12px rgba(0,0,0,.15)}
-h1{text-align:center;margin:0 0 18px;font-size:28px} label{display:block;font-weight:bold;margin-top:14px}
+h1{text-align:center;margin:0 0 18px;font-size:27px}
+h2{text-align:center;font-size:22px;margin:4px 0 16px}
+label{display:block;font-weight:bold;margin-top:14px}
 input,select{width:100%;padding:13px;margin-top:6px;border:2px solid #999;border-radius:8px;font-size:18px;background:#fff;color:#111}
-input:focus,select:focus{border-color:#0d6efd;outline:none} button{width:100%;padding:15px;margin-top:16px;border:none;border-radius:8px;font-size:17px;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.6;cursor:wait}.manual{background:#6c757d;color:#fff}.escanear{background:#0d6efd;color:#fff}.transferir{background:#198754;color:#fff}.detener{background:#dc3545;color:#fff}
-#lector{width:100%;margin-top:14px;display:none;overflow:hidden} #mensaje{text-align:center;margin-top:18px;font-weight:bold;font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere}
+input:focus,select:focus{border-color:#0d6efd;outline:none}
+button{width:100%;padding:15px;margin-top:16px;border:none;border-radius:8px;font-size:17px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+.menu-wip{background:#0d6efd;color:#fff}.menu-pt{background:#198754;color:#fff}
+.manual{background:#6c757d;color:#fff}.escanear{background:#0d6efd;color:#fff}
+.transferir{background:#198754;color:#fff}.detener{background:#dc3545;color:#fff}
+.secundario{background:#6c757d;color:#fff}
+#lector{width:100%;margin-top:14px;display:none;overflow:hidden}
+#mensaje,#mensajePT{text-align:center;margin-top:18px;font-weight:bold;font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere}
 .ayuda{text-align:center;margin-top:8px;font-size:14px;color:#666}
+.pantalla{display:none}.pantalla.activa{display:block}
+.cabecera{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.cabecera button{width:auto;margin:0;padding:10px 13px;font-size:14px}
+.nota{font-size:13px;color:#555;line-height:1.4;margin-top:12px}
+#etiquetaImpresion{display:none}
+@media print{
+ @page{size:50mm 40mm;margin:0}
+ body{margin:0;padding:0;background:#fff}
+ body *{visibility:hidden!important}
+ #etiquetaImpresion,#etiquetaImpresion *{visibility:visible!important}
+ #etiquetaImpresion{display:flex!important;position:absolute;left:0;top:0;width:50mm;height:40mm;padding:2mm;flex-direction:column;align-items:center;justify-content:space-between;font-family:Arial,sans-serif;color:#000;overflow:hidden}
+ #etiquetaImpresion .et-codigo{font-size:10pt;font-weight:bold;line-height:1}
+ #etiquetaImpresion .et-descripcion{font-size:8pt;text-align:center;line-height:1.05;max-height:7mm;overflow:hidden}
+ #etiquetaImpresion .et-cantidad{font-size:8pt}
+ #etiquetaImpresion svg{width:44mm;height:13mm}
+ #etiquetaImpresion .et-pallet{font-size:9pt;font-weight:bold}
+}
 </style>
 </head>
 <body>
 <div class="contenedor">
-<h1>📦 WIP SCANNER</h1>
-<button type="button" class="manual" onclick="habilitarCodigo()">⌨️ INGRESAR CÓDIGO MANUALMENTE</button>
-<button type="button" class="escanear" id="botonEscanear" onclick="iniciarScanner()">📷 ESCANEAR CÓDIGO</button>
-<button type="button" class="detener" id="botonDetener" onclick="detenerScanner()" style="display:none">DETENER CÁMARA</button>
-<div id="lector"></div>
+  <section id="inicio" class="pantalla activa">
+    <h1>📦 SISTEMA DE SCANNER</h1>
+    <button type="button" class="menu-wip" onclick="mostrarPantalla('wip')">WIP – MATERIAS PRIMAS</button>
+    <button type="button" class="menu-pt" onclick="mostrarPantalla('pt')">PRODUCTOS TERMINADOS</button>
+    <div class="ayuda">Selecciona el circuito que deseas utilizar.</div>
+  </section>
 
-<label for="codigo">Código de materia prima</label>
-<input type="text" id="codigo" placeholder="Ejemplo: PPMCM" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text">
-<div class="ayuda">Puedes escribir el código o escanearlo.</div>
+  <section id="wip" class="pantalla">
+    <div class="cabecera"><button type="button" class="secundario" onclick="mostrarPantalla('inicio')">← INICIO</button><h2>📦 WIP SCANNER</h2></div>
+    <button type="button" class="manual" onclick="habilitarCodigo()">⌨️ INGRESAR CÓDIGO MANUALMENTE</button>
+    <button type="button" class="escanear" id="botonEscanear" onclick="iniciarScanner()">📷 ESCANEAR CÓDIGO</button>
+    <button type="button" class="detener" id="botonDetener" onclick="detenerScanner()" style="display:none">DETENER CÁMARA</button>
+    <div id="lector"></div>
 
-<label for="material">Material</label>
-<input type="text" id="material" placeholder="Ej.: PP MULTICOLOR MOLIDO" readonly>
+    <label for="codigo">Código de materia prima</label>
+    <input type="text" id="codigo" placeholder="Ejemplo: PPMCM" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text">
+    <div class="ayuda">Puedes escribir el código o escanearlo.</div>
 
-<label for="cantidad">Cantidad (kg)</label>
-<input type="number" id="cantidad" placeholder="Cantidad en kg" min="0" step="any" inputmode="decimal">
+    <label for="material">Material</label>
+    <input type="text" id="material" placeholder="Ej.: PP MULTICOLOR MOLIDO" readonly>
 
-<label for="lote">Lote</label>
-<input type="text" id="lote" placeholder="Lote">
+    <label for="cantidad">Cantidad (kg)</label>
+    <input type="number" id="cantidad" placeholder="Cantidad en kg" min="0" step="any" inputmode="decimal">
 
-<label for="ubicacion">Destino WIP</label>
-<select id="ubicacion">
-<option value="WIP INYECCION">WIP INYECCION</option>
-<option value="WIP EXTRUSION">WIP EXTRUSION</option>
-</select>
+    <label for="lote">Lote</label>
+    <input type="text" id="lote" placeholder="Lote">
 
-<button type="button" class="transferir" id="botonTransferir" onclick="registrar()">TRANSFERIR A WIP</button>
-<div id="mensaje" role="status" aria-live="polite"></div>
+    <label for="ubicacion">Destino WIP</label>
+    <select id="ubicacion">
+      <option value="WIP INYECCION">WIP INYECCION</option>
+      <option value="WIP EXTRUSION">WIP EXTRUSION</option>
+    </select>
+
+    <button type="button" class="transferir" id="botonTransferir" onclick="registrar()">TRANSFERIR A WIP</button>
+    <div id="mensaje" role="status" aria-live="polite"></div>
+  </section>
+
+  <section id="pt" class="pantalla">
+    <div class="cabecera"><button type="button" class="secundario" onclick="mostrarPantalla('inicio')">← INICIO</button><h2>PRODUCTOS TERMINADOS</h2></div>
+    <label for="codigoPT">Código del producto</label>
+    <input type="text" id="codigoPT" placeholder="Ej.: 11000SG" autocomplete="off" autocapitalize="characters">
+    <label for="descripcionPT">Descripción</label>
+    <input type="text" id="descripcionPT" placeholder="Descripción del producto">
+    <label for="cantidadPT">Cantidad de unidades del pallet</label>
+    <input type="number" id="cantidadPT" placeholder="Cantidad real de unidades" min="1" step="1" inputmode="numeric">
+    <button type="button" class="transferir" id="botonRegistrarPT" onclick="registrarPalletPT()">REGISTRAR PALLET</button>
+    <div id="mensajePT" role="status" aria-live="polite"></div>
+    <p class="nota">Al registrar correctamente, el sistema devolverá el número correlativo del pallet y se habilitará la impresión de la etiqueta de 50 × 40 mm.</p>
+    <button type="button" id="botonImprimirPT" class="escanear" style="display:none" onclick="window.print()">IMPRIMIR ETIQUETA</button>
+  </section>
+</div>
+
+<div id="etiquetaImpresion">
+  <div class="et-codigo" id="etCodigo"></div>
+  <div class="et-descripcion" id="etDescripcion"></div>
+  <svg id="etBarras"></svg>
+  <div class="et-cantidad" id="etCantidad"></div>
+  <div class="et-pallet" id="etPallet"></div>
 </div>
 
 <script>
 const URL_APPS_SCRIPT="https://script.google.com/macros/s/AKfycbx8H4SfjGCVA8m3AtDt9lWok8iYldnEl9KCh3eAkQr4AY9-L7o6m9KwbYgh2tp8MKowQg/exec";
 let scanner=null;
 let iniciandoScanner=false;
+let ultimoPalletRegistrado=null;
+
+function mostrarPantalla(nombre){
+ document.querySelectorAll(".pantalla").forEach(p=>p.classList.remove("activa"));
+ document.getElementById(nombre).classList.add("activa");
+ if(nombre!=="wip" && scanner) detenerScanner();
+}
 
 function habilitarCodigo(){
  const campo=document.getElementById("codigo");
@@ -85,15 +150,10 @@ async function buscarMaterial(codigo){
 }
 
 document.getElementById("codigo").addEventListener("keydown",function(e){
- if(e.key==="Enter"){
-  e.preventDefault();
-  const codigo=this.value.trim();
-  if(codigo) buscarMaterial(codigo);
- }
+ if(e.key==="Enter"){e.preventDefault();const codigo=this.value.trim();if(codigo) buscarMaterial(codigo);}
 });
 document.getElementById("codigo").addEventListener("change",function(){
- const codigo=this.value.trim();
- if(codigo) buscarMaterial(codigo);
+ const codigo=this.value.trim();if(codigo) buscarMaterial(codigo);
 });
 
 async function iniciarScanner(){
@@ -106,35 +166,26 @@ async function iniciarScanner(){
  lector.style.display="block";
  document.getElementById("botonDetener").style.display="block";
  try{
-  if(scanner){try{await scanner.stop()}catch(e){} try{await scanner.clear()}catch(e){} scanner=null;}
+  if(scanner){try{await scanner.stop()}catch(e){}try{await scanner.clear()}catch(e){}scanner=null;}
   scanner=new Html5Qrcode("lector");
   await scanner.start({facingMode:"environment"},{fps:10,qrbox:{width:260,height:150},aspectRatio:1.777778},
    async function(texto){
-    const codigo=String(texto||"").trim();
-    if(!codigo)return;
+    const codigo=String(texto||"").trim();if(!codigo)return;
     document.getElementById("codigo").value=codigo;
-    await detenerScanner();
-    await buscarMaterial(codigo);
-    document.getElementById("codigo").focus();
+    await detenerScanner();await buscarMaterial(codigo);document.getElementById("codigo").focus();
    },function(){});
   mensaje.textContent="📷 Cámara activa. Apunta al código de barras.";
  }catch(error){
-  console.error("Error de cámara:",error);
-  lector.style.display="none";
+  console.error("Error de cámara:",error);lector.style.display="none";
   document.getElementById("botonDetener").style.display="none";
-  mensaje.textContent="❌ No se pudo abrir la cámara.\n"+(error&&error.message?error.message:String(error));
-  scanner=null;
- }finally{
-  iniciandoScanner=false;
-  document.getElementById("botonEscanear").disabled=false;
- }
+  mensaje.textContent="❌ No se pudo abrir la cámara.\n"+(error&&error.message?error.message:String(error));scanner=null;
+ }finally{iniciandoScanner=false;document.getElementById("botonEscanear").disabled=false;}
 }
 
 async function detenerScanner(){
  const lector=document.getElementById("lector");
- if(scanner){try{await scanner.stop()}catch(e){} try{await scanner.clear()}catch(e){} scanner=null;}
- lector.style.display="none";
- document.getElementById("botonDetener").style.display="none";
+ if(scanner){try{await scanner.stop()}catch(e){}try{await scanner.clear()}catch(e){}scanner=null;}
+ lector.style.display="none";document.getElementById("botonDetener").style.display="none";
  document.getElementById("botonEscanear").disabled=false;
 }
 
@@ -150,23 +201,60 @@ async function registrar(){
  };
  if(!datos.codigo){mensaje.textContent="⚠️ Ingresa o escanea el código de materia prima.";document.getElementById("codigo").focus();return;}
  if(!datos.cantidad||Number(datos.cantidad)<=0){mensaje.textContent="⚠️ Ingresa una cantidad mayor que 0.";document.getElementById("cantidad").focus();return;}
- boton.disabled=true;
- mensaje.textContent="⏳ Enviando movimiento a Google Sheets…";
+ boton.disabled=true;mensaje.textContent="⏳ Enviando movimiento a Google Sheets…";
  try{
   const respuesta=await fetch(URL_APPS_SCRIPT,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(datos)});
   const texto=await respuesta.text();
   if(!respuesta.ok)throw new Error("Respuesta HTTP "+respuesta.status+(texto?": "+texto:""));
   if(texto&&/error|❌/i.test(texto))throw new Error(texto);
   mensaje.textContent="✅ MOVIMIENTO REGISTRADO";
-  document.getElementById("codigo").value="";
-  document.getElementById("material").value="";
-  document.getElementById("cantidad").value="";
-  document.getElementById("lote").value="";
+  document.getElementById("codigo").value="";document.getElementById("material").value="";
+  document.getElementById("cantidad").value="";document.getElementById("lote").value="";
   document.getElementById("codigo").focus();
  }catch(error){
   console.error("Error al enviar WIP:",error);
   mensaje.textContent="❌ No se pudo confirmar el envío.\n"+(error&&error.message?error.message:error)+"\nRevisa REGISTRO WIP antes de volver a enviar para evitar duplicados.";
  }finally{boton.disabled=false;}
+}
+
+async function registrarPalletPT(){
+ const boton=document.getElementById("botonRegistrarPT");
+ const mensaje=document.getElementById("mensajePT");
+ const datos={
+  movimiento:"REGISTRO_PALLET",
+  codigo:document.getElementById("codigoPT").value.trim(),
+  descripcion:document.getElementById("descripcionPT").value.trim(),
+  cantidad:document.getElementById("cantidadPT").value
+ };
+ if(!datos.codigo){mensaje.textContent="⚠️ Ingresa el código del producto.";return;}
+ if(!datos.descripcion){mensaje.textContent="⚠️ Ingresa la descripción del producto.";return;}
+ if(!datos.cantidad||!Number.isInteger(Number(datos.cantidad))||Number(datos.cantidad)<=0){mensaje.textContent="⚠️ Ingresa una cantidad entera mayor que cero.";return;}
+ boton.disabled=true;mensaje.textContent="⏳ Registrando pallet...";
+ document.getElementById("botonImprimirPT").style.display="none";
+ try{
+  const respuesta=await fetch(URL_APPS_SCRIPT,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(datos)});
+  const texto=await respuesta.text();
+  let resultado;
+  try{resultado=JSON.parse(texto);}catch(e){throw new Error("Respuesta no reconocida del servidor: "+texto);}
+  if(!respuesta.ok||!resultado.ok)throw new Error(resultado.mensaje||resultado.error||("HTTP "+respuesta.status));
+  ultimoPalletRegistrado={...datos,numeroPallet:resultado.numeroPallet,codigoBarras:resultado.codigoBarras||resultado.numeroPallet};
+  prepararEtiqueta(ultimoPalletRegistrado);
+  mensaje.textContent="✅ "+(resultado.mensaje||"PALLET REGISTRADO CORRECTAMENTE")+"\nPallet: "+resultado.numeroPallet;
+  document.getElementById("botonImprimirPT").style.display="block";
+ }catch(error){
+  console.error("Error registrando pallet:",error);
+  mensaje.textContent="❌ "+(error.message||error)+"\nAntes de volver a enviar, revisa REGISTRO PALLETS para evitar duplicados.";
+ }finally{boton.disabled=false;}
+}
+
+function prepararEtiqueta(p){
+ document.getElementById("etCodigo").textContent=p.codigo;
+ document.getElementById("etDescripcion").textContent=p.descripcion;
+ document.getElementById("etCantidad").textContent="CANTIDAD: "+p.cantidad+" UNIDADES";
+ document.getElementById("etPallet").textContent=p.numeroPallet;
+ if(typeof JsBarcode!=="undefined"){
+  JsBarcode("#etBarras",String(p.codigoBarras),{format:"CODE128",displayValue:false,margin:0,width:1.5,height:38});
+ }
 }
 </script>
 </body>
