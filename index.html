@@ -41,15 +41,14 @@ button:disabled{opacity:.6;cursor:wait}
         margin: 0 !important;
         padding: 0 !important;
         overflow: hidden !important;
-        background: white !important;
+        background: #fff !important;
     }
 
-    /* Ocultar todas las pantallas del scanner */
+    /* Ocultar el sistema y dejar visible solo la etiqueta */
     body > *:not(#etiquetaImpresion) {
         display: none !important;
     }
 
-    /* Imprimir solamente la etiqueta */
     #etiquetaImpresion {
         display: flex !important;
         position: fixed !important;
