@@ -107,6 +107,7 @@ button:disabled{opacity:.6;cursor:wait}
     <h1>📦 SISTEMA DE SCANNER</h1>
     <button type="button" class="menu-wip" onclick="mostrarPantalla('wip')">WIP – MATERIAS PRIMAS</button>
     <button type="button" class="menu-pt" onclick="mostrarPantalla('pt')">PRODUCTOS TERMINADOS</button>
+      <button type="button" class="escanear" onclick="mostrarPantalla('pallets')">ESCANEAR PALLETS</button>
     <div class="ayuda">Selecciona el circuito que deseas utilizar.</div>
   </section>
 
@@ -153,6 +154,45 @@ button:disabled{opacity:.6;cursor:wait}
     <p class="nota">Al registrar correctamente, el sistema devolverá el número correlativo del pallet y se habilitará la impresión de la etiqueta de 50 × 40 mm.</p>
     <button type="button" id="botonImprimirPT" class="escanear" style="display:none" onclick="window.print()">IMPRIMIR ETIQUETA</button>
   </section>
+    <section id="pallets" class="pantalla">
+  <div class="cabecera">
+    <button type="button" class="secundario" onclick="mostrarPantalla('inicio')">← INICIO</button>
+    <h2>📦 ESCANEAR PALLETS</h2>
+  </div>
+<label for="codigoBarrasPallet">Código de barras del pallet:</label>
+<input
+  type="text"
+  id="codigoBarrasPallet"
+  placeholder="Escanear o escribir código"
+  autocomplete="off"
+  onkeydown="if(event.key==='Enter'){consultarPallet(this.value)}"
+>
+
+<button type="button" class="transferir"
+  onclick="consultarPallet(document.getElementById('codigoBarrasPallet').value)">
+  BUSCAR PALLET
+</button>
+  <button type="button" class="escanear" onclick="iniciarScannerPallet()">ESCANEAR CÓDIGO DE PALLET</button>
+  <button type="button" class="detener" onclick="detenerScannerPallet()" style="display:none">DETENER CÁMARA</button>
+
+  <div id="lectorPallet"></div>
+
+  <div id="datosPallet" style="display:none">
+    <h3>DATOS DEL PALLET</h3>
+    <p id="infoPallet"></p>
+
+    <label for="ubicacionPallet">Seleccionar ubicación:</label>
+    <select id="ubicacionPallet">
+      <option value="">Seleccionar...</option>
+      <option value="EXPEDICION">EXPEDICIÓN</option>
+      <option value="DEPÓSITO">DEPÓSITO</option>
+    </select>
+
+    <button type="button" class="transferir" onclick="confirmarUbicacionPallet()">CONFIRMAR UBICACIÓN</button>
+  </div>
+
+  <div id="mensajePallet" role="status" aria-live="polite"></div>
+</section>
 </div>
 
 <div id="etiquetaImpresion">
@@ -342,6 +382,157 @@ function prepararEtiqueta(p){
   JsBarcode("#etBarras",String(p.codigoBarras),{format:"CODE128",displayValue:false,margin:0,width:1.5,height:38});
  }
 }
+// =====================================
+// ESCANEO Y UBICACION DE PALLETS
+// =====================================
+
+let scannerPallet = null;
+let palletActual = null;
+
+async function iniciarScannerPallet() {
+  try {
+    if (scannerPallet) {
+      await detenerScannerPallet();
+    }
+
+    scannerPallet = new Html5Qrcode("lectorPallet");
+
+    document.getElementById("mensajePallet").textContent =
+      "Iniciando cámara...";
+
+    document.querySelector("#pallets .detener").style.display = "block";
+
+    await scannerPallet.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 280, height: 120 } },
+      async (codigo) => {
+        await detenerScannerPallet();
+        document.getElementById("codigoBarrasPallet").value = codigo;
+        await consultarPallet(codigo);
+      }
+    );
+
+  } catch (error) {
+    document.getElementById("mensajePallet").textContent =
+      "Error al iniciar cámara: " + error;
+  }
+}
+
+async function detenerScannerPallet() {
+  if (scannerPallet) {
+    try {
+      if (scannerPallet.isScanning) {
+        await scannerPallet.stop();
+      }
+      await scannerPallet.clear();
+    } catch (error) {
+      console.log("Cámara detenida.");
+    }
+
+    scannerPallet = null;
+  }
+
+  document.querySelector("#pallets .detener").style.display = "none";
+}
+
+async function consultarPallet(codigo) {
+  const mensaje = document.getElementById("mensajePallet");
+
+  codigo = String(codigo || "").trim();
+
+  if (!codigo) {
+    mensaje.textContent = "Ingresá o escaneá un código de pallet.";
+    return;
+  }
+
+  try {
+    mensaje.textContent = "Buscando pallet...";
+
+    const url = URL_APPS_SCRIPT +
+      "?accion=buscarPallet&codigo=" +
+      encodeURIComponent(codigo);
+
+    const respuesta = await fetch(url);
+    const resultado = await respuesta.json();
+
+    if (!resultado.encontrado) {
+      throw new Error("No se encontró el pallet: " + codigo);
+    }
+
+    palletActual = resultado;
+
+    document.getElementById("infoPallet").textContent =
+      "Pallet: " + resultado.numeroPallet +
+      "\nCódigo: " + resultado.codigo +
+      "\nDescripción: " + resultado.descripcion +
+      "\nCantidad: " + resultado.cantidad +
+      "\nUbicación actual: " +
+      (resultado.ubicacion || "SIN UBICACIÓN");
+
+    document.getElementById("ubicacionPallet").value = "";
+    document.getElementById("datosPallet").style.display = "block";
+
+    mensaje.textContent = "Pallet encontrado correctamente.";
+
+  } catch (error) {
+    palletActual = null;
+    document.getElementById("datosPallet").style.display = "none";
+    mensaje.textContent = "Error: " + error.message;
+  }
+}
+
+async function confirmarUbicacionPallet() {
+  const mensaje = document.getElementById("mensajePallet");
+  const ubicacion = document.getElementById("ubicacionPallet").value;
+
+  if (!palletActual) {
+    mensaje.textContent = "Primero buscá un pallet.";
+    return;
+  }
+
+  if (!ubicacion) {
+    mensaje.textContent = "Seleccioná una ubicación.";
+    return;
+  }
+
+  try {
+    mensaje.textContent = "Registrando ubicación...";
+
+    const datos = {
+      movimiento: "UBICACION_PALLET",
+      codigoBarras: palletActual.codigoBarras || palletActual.numeroPallet,
+      numeroPallet: palletActual.numeroPallet,
+      ubicacion: ubicacion
+    };
+
+    const respuesta = await fetch(URL_APPS_SCRIPT, {
+      method: "POST",
+      redirect: "follow",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify(datos)
+    });
+
+    const resultado = await respuesta.json();
+
+    if (!resultado.ok) {
+      throw new Error(resultado.error || resultado.mensaje || "No se pudo registrar.");
+    }
+
+    mensaje.textContent =
+      "Ubicación actualizada correctamente: " + ubicacion;
+
+    palletActual.ubicacion = ubicacion;
+    document.getElementById("datosPallet").style.display = "none";
+    document.getElementById("codigoBarrasPallet").value = "";
+    palletActual = null;
+
+  } catch (error) {
+    mensaje.textContent = "Error al registrar: " + error.message;
+  }
+}
+    
 </script>
 </body>
 </html>
