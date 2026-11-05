@@ -143,7 +143,7 @@ button:disabled{opacity:.6;cursor:wait}
   <section id="pt" class="pantalla">
     <div class="cabecera"><button type="button" class="secundario" onclick="mostrarPantalla('inicio')">← INICIO</button><h2>PRODUCTOS TERMINADOS</h2></div>
     <label for="codigoPT">Código del producto</label>
-    <input type="text" id="codigoPT" placeholder="Ej.: 11000SG" autocomplete="off" autocapitalize="characters">
+   <input type="text" id="codigoPT" placeholder="Ej.: 11000SG" autocomplete="off" autocapitalize="characters" onchange="buscarDescripcionPT()">
     <label for="descripcionPT">Descripción</label>
     <input type="text" id="descripcionPT" placeholder="Descripción del producto">
     <label for="cantidadPT">Cantidad de unidades del pallet</label>
@@ -274,6 +274,34 @@ async function registrar(){
   mensaje.textContent="❌ No se pudo confirmar el envío.\n"+(error&&error.message?error.message:error)+"\nRevisa REGISTRO WIP antes de volver a enviar para evitar duplicados.";
  }finally{boton.disabled=false;}
 }
+    async function buscarDescripcionPT() {
+  const codigo = document.getElementById("codigoPT").value.trim();
+  const descripcion = document.getElementById("descripcionPT");
+
+  if (!codigo) {
+    descripcion.value = "";
+    return;
+  }
+
+  try {
+    const url = URL_APPS_SCRIPT
+      + "?accion=buscarProducto&codigo="
+      + encodeURIComponent(codigo);
+
+    const respuesta = await fetch(url);
+    const resultado = await respuesta.json();
+
+    if (resultado.encontrado) {
+      descripcion.value = resultado.descripcion || "";
+    } else {
+      descripcion.value = "";
+      alert("No se encontró ese código en CONFIG PRODUCTO MP.");
+    }
+  } catch (error) {
+    console.error("Error buscando descripción:", error);
+    alert("No se pudo consultar la descripción del producto.");
+  }
+}
 
 async function registrarPalletPT(){
  const boton=document.getElementById("botonRegistrarPT");
@@ -295,7 +323,7 @@ async function registrarPalletPT(){
   let resultado;
   try{resultado=JSON.parse(texto);}catch(e){throw new Error("Respuesta no reconocida del servidor: "+texto);}
   if(!respuesta.ok||!resultado.ok)throw new Error(resultado.mensaje||resultado.error||("HTTP "+respuesta.status));
-  ultimoPalletRegistrado={...datos,numeroPallet:resultado.numeroPallet,codigoBarras:resultado.codigoBarras||resultado.numeroPallet};
+  ultimo<input id="codigoPT" PalletRegistrado={...datos,numeroPallet:resultado.numeroPallet,codigoBarras:resultado.codigoBarras||resultado.numeroPallet};
   prepararEtiqueta(ultimoPalletRegistrado);
   mensaje.textContent="✅ "+(resultado.mensaje||"PALLET REGISTRADO CORRECTAMENTE")+"\nPallet: "+resultado.numeroPallet;
   document.getElementById("botonImprimirPT").style.display="block";
