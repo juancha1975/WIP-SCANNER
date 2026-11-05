@@ -323,7 +323,7 @@ async function registrarPalletPT(){
   let resultado;
   try{resultado=JSON.parse(texto);}catch(e){throw new Error("Respuesta no reconocida del servidor: "+texto);}
   if(!respuesta.ok||!resultado.ok)throw new Error(resultado.mensaje||resultado.error||("HTTP "+respuesta.status));
-  ultimo<input id="codigoPT" PalletRegistrado={...datos,numeroPallet:resultado.numeroPallet,codigoBarras:resultado.codigoBarras||resultado.numeroPallet};
+  ultimoPalletRegistrado={...datos,numeroPallet:resultado.numeroPallet,codigoBarras:resultado.codigoBarras||resultado.numeroPallet};
   prepararEtiqueta(ultimoPalletRegistrado);
   mensaje.textContent="✅ "+(resultado.mensaje||"PALLET REGISTRADO CORRECTAMENTE")+"\nPallet: "+resultado.numeroPallet;
   document.getElementById("botonImprimirPT").style.display="block";
