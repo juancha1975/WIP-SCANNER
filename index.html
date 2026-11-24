@@ -395,35 +395,88 @@ async function registrar(){
   }
 }
 
-async function registrarPalletPT(){
- const boton=document.getElementById("botonRegistrarPT");
- const mensaje=document.getElementById("mensajePT");
- const datos={
-  movimiento:"REGISTRO_PALLET",
-  codigo:document.getElementById("codigoPT").value.trim(),
-  descripcion:document.getElementById("descripcionPT").value.trim(),
-  cantidad:document.getElementById("cantidadPT").value
- };
- if(!datos.codigo){mensaje.textContent="⚠️ Ingresa el código del producto.";return;}
- if(!datos.descripcion){mensaje.textContent="⚠️ Ingresa la descripción del producto.";return;}
- if(!datos.cantidad||!Number.isInteger(Number(datos.cantidad))||Number(datos.cantidad)<=0){mensaje.textContent="⚠️ Ingresa una cantidad entera mayor que cero.";return;}
- boton.disabled=true;mensaje.textContent="⏳ Registrando pallet...";
- document.getElementById("botonImprimirPT").style.display="none";
- try{
-  const respuesta=await fetch(URL_APPS_SCRIPT,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(datos)});
-  const texto=await respuesta.text();
-  let resultado;
-  try{resultado=JSON.parse(texto);}catch(e){throw new Error("Respuesta no reconocida del servidor: "+texto);}
-  if(!respuesta.ok||!resultado.ok)throw new Error(resultado.mensaje||resultado.error||("HTTP "+respuesta.status));
-  ultimoPalletRegistrado={...datos,numeroPallet:resultado.numeroPallet,codigoBarras:resultado.codigoBarras||resultado.numeroPallet};
-  prepararEtiqueta(ultimoPalletRegistrado);
-  mensaje.textContent="✅ "+(resultado.mensaje||"PALLET REGISTRADO CORRECTAMENTE")+"\nPallet: "+resultado.numeroPallet;
-  document.getElementById("botonImprimirPT").style.display="block";
- }catch(error){
-  console.error("Error registrando pallet:",error);
-  mensaje.textContent="❌ "+(error.message||error)+"\nAntes de volver a enviar, revisa REGISTRO PALLETS para evitar duplicados.";
- }finally{boton.disabled=false;}
+
+async function registrarPalletPT() {
+  const boton = document.getElementById("botonRegistrarPT");
+  const mensaje = document.getElementById("mensajePT");
+
+  const datos = {
+    codigo: document.getElementById("codigoPT").value.trim(),
+    descripcion: document.getElementById("descripcionPT").value.trim(),
+    cantidad: document.getElementById("cantidadPT").value
+  };
+
+  if (!datos.codigo) {
+    mensaje.textContent = "⚠️ Ingresa el código del producto.";
+    return;
+  }
+
+  if (!datos.descripcion) {
+    mensaje.textContent = "⚠️ Ingresa la descripción del producto.";
+    return;
+  }
+
+  if (!datos.cantidad ||
+      !Number.isInteger(Number(datos.cantidad)) ||
+      Number(datos.cantidad) <= 0) {
+    mensaje.textContent = "⚠️ Ingresa una cantidad entera mayor que cero.";
+    return;
+  }
+
+  boton.disabled = true;
+  mensaje.textContent = "⏳ Registrando pallet...";
+
+  document.getElementById("botonImprimirPT").style.display = "none";
+
+  try {
+    const parametros = new URLSearchParams({
+      accion: "registrarPallet",
+      codigo: datos.codigo,
+      descripcion: datos.descripcion,
+      cantidad: datos.cantidad
+    });
+
+    const respuesta = await fetch(
+      URL_APPS_SCRIPT + "?" + parametros.toString(),
+      {
+        method: "GET",
+        redirect: "follow"
+      }
+    );
+
+    const resultado = await respuesta.json();
+
+    if (!respuesta.ok || !resultado.ok) {
+      throw new Error(
+        resultado.mensaje || resultado.error || "No se pudo registrar."
+      );
+    }
+
+    ultimoPalletRegistrado = {
+      ...datos,
+      numeroPallet: resultado.numeroPallet,
+      codigoBarras: resultado.codigoBarras || resultado.numeroPallet
+    };
+
+    prepararEtiqueta(ultimoPalletRegistrado);
+
+    mensaje.textContent =
+      "✅ " + (resultado.mensaje || "PALLET REGISTRADO CORRECTAMENTE") +
+      "\nPallet: " + resultado.numeroPallet;
+
+    document.getElementById("botonImprimirPT").style.display = "block";
+
+  } catch (error) {
+    console.error("Error registrando pallet:", error);
+    mensaje.textContent =
+      "❌ " + error.message +
+      "\nAntes de volver a enviar, revisa REGISTRO PALLETS para evitar duplicados.";
+
+  } finally {
+    boton.disabled = false;
+  }
 }
+
 
 function prepararEtiqueta(p){
  document.getElementById("etCodigo").textContent=p.codigo;
