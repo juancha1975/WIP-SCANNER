@@ -533,6 +533,7 @@ async function consultarPallet(codigo) {
   }
 }
 
+
 async function confirmarUbicacionPallet() {
   const mensaje = document.getElementById("mensajePallet");
   const ubicacion = document.getElementById("ubicacionPallet").value;
@@ -550,41 +551,44 @@ async function confirmarUbicacionPallet() {
   try {
     mensaje.textContent = "Registrando ubicación...";
 
-    const datos = {
-      movimiento: "UBICACION_PALLET",
+    const parametros = new URLSearchParams({
+      accion: "registrarMovimientoPallet",
       codigoBarras: palletActual.codigoBarras || palletActual.numeroPallet,
       numeroPallet: palletActual.numeroPallet,
       ubicacion: ubicacion
-    };
-
-    const respuesta = await fetch(URL_APPS_SCRIPT, {
-      method: "POST",
-      redirect: "follow",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      body: JSON.stringify(datos)
     });
+
+    const respuesta = await fetch(
+      URL_APPS_SCRIPT + "?" + parametros.toString(),
+      {
+        method: "GET",
+        redirect: "follow"
+      }
+    );
 
     const resultado = await respuesta.json();
 
     if (!resultado.ok) {
-      throw new Error(resultado.error || resultado.mensaje || "No se pudo registrar.");
+      throw new Error(
+        resultado.error || resultado.mensaje || "No se pudo registrar."
+      );
     }
 
     mensaje.textContent =
       "Ubicación actualizada correctamente: " + ubicacion;
 
     palletActual.ubicacion = ubicacion;
+
     document.getElementById("datosPallet").style.display = "none";
     document.getElementById("codigoBarrasPallet").value = "";
+
     palletActual = null;
 
   } catch (error) {
     mensaje.textContent = "Error al registrar: " + error.message;
   }
 }
-  
+
 // =====================================
 // CORRECCION DE CANTIDAD DE PALLETS
 // =====================================
