@@ -584,7 +584,134 @@ async function confirmarUbicacionPallet() {
     mensaje.textContent = "Error al registrar: " + error.message;
   }
 }
-    
+  
+// =====================================
+// CORRECCION DE CANTIDAD DE PALLETS
+// =====================================
+
+let palletCorreccionActual = null;
+
+async function buscarPalletCorreccion() {
+  const codigo = document.getElementById("codigoCorreccion").value.trim();
+  const mensaje = document.getElementById("mensajeCorreccion");
+
+  document.getElementById("datosCorreccion").style.display = "none";
+  palletCorreccionActual = null;
+
+  if (!codigo) {
+    mensaje.textContent = "Ingresá o escaneá el número del pallet.";
+    return;
+  }
+
+  try {
+    mensaje.textContent = "Buscando pallet...";
+
+    const url = URL_APPS_SCRIPT +
+      "?accion=buscarPalletCorreccion&codigo=" +
+      encodeURIComponent(codigo);
+
+    const respuesta = await fetch(url, { cache: "no-store" });
+    const resultado = await respuesta.json();
+
+    if (!resultado.encontrado) {
+      throw new Error("No se encontró el pallet.");
+    }
+
+    palletCorreccionActual = resultado;
+
+    document.getElementById("infoCorreccion").textContent =
+      "Pallet: " + resultado.numeroPallet +
+      "\nCódigo: " + resultado.codigo +
+      "\nDescripción: " + resultado.descripcion +
+      "\nCantidad actual: " + resultado.cantidad;
+
+    document.getElementById("nuevaCantidadPallet").value =
+      resultado.cantidad;
+
+    document.getElementById("motivoCorreccion").value = "";
+
+    document.getElementById("datosCorreccion").style.display = "block";
+    mensaje.textContent = "Pallet encontrado correctamente.";
+
+  } catch (error) {
+    mensaje.textContent = "Error: " + error.message;
+  }
+}
+
+
+async function guardarCorreccionPallet() {
+  const mensaje = document.getElementById("mensajeCorreccion");
+
+  if (!palletCorreccionActual) {
+    mensaje.textContent = "Primero buscá un pallet.";
+    return;
+  }
+
+  const cantidad = document.getElementById("nuevaCantidadPallet").value;
+  const motivo = document.getElementById("motivoCorreccion").value.trim();
+
+  if (!cantidad || !Number.isInteger(Number(cantidad)) || Number(cantidad) <= 0) {
+    mensaje.textContent = "Ingresá una cantidad entera mayor que cero.";
+    return;
+  }
+
+  if (!motivo) {
+    mensaje.textContent = "Debés ingresar el motivo de la corrección.";
+    return;
+  }
+
+  if (!confirm(
+    "¿Confirmás corregir el pallet " +
+    palletCorreccionActual.numeroPallet +
+    " de " + palletCorreccionActual.cantidad +
+    " a " + cantidad + " unidades?"
+  )) {
+    return;
+  }
+
+  try {
+    mensaje.textContent = "Guardando corrección...";
+
+    const parametros = new URLSearchParams({
+      accion: "corregirCantidadPallet",
+      codigoBarras: palletCorreccionActual.numeroPallet,
+      cantidad: cantidad,
+      motivo: motivo
+    });
+
+    const respuesta = await fetch(
+      URL_APPS_SCRIPT + "?" + parametros.toString(),
+      { cache: "no-store" }
+    );
+
+    const resultado = await respuesta.json();
+
+    if (!resultado.ok) {
+      throw new Error(resultado.error || "No se pudo corregir el pallet.");
+    }
+
+    mensaje.textContent =
+      "CORRECCIÓN REALIZADA CORRECTAMENTE\n" +
+      "Pallet: " + resultado.numeroPallet +
+      "\nCantidad anterior: " + resultado.cantidadAnterior +
+      "\nCantidad nueva: " + resultado.cantidadNueva;
+
+    document.getElementById("infoCorreccion").textContent =
+      "Pallet: " + resultado.numeroPallet +
+      "\nCantidad actualizada: " + resultado.cantidadNueva;
+
+    document.getElementById("nuevaCantidadPallet").value =
+      resultado.cantidadNueva;
+
+    document.getElementById("motivoCorreccion").value = "";
+
+    palletCorreccionActual.cantidad = resultado.cantidadNueva;
+
+  } catch (error) {
+    mensaje.textContent = "Error al corregir: " + error.message;
+  }
+}
+  
 </script>
 </body>
 </html>
