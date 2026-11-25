@@ -152,12 +152,36 @@ button:disabled{opacity:.6;cursor:wait}
 
   <section id="pt" class="pantalla">
     <div class="cabecera"><button type="button" class="secundario" onclick="mostrarPantalla('inicio')">← INICIO</button><h2>PRODUCTOS TERMINADOS</h2></div>
-    <label for="codigoPT">Código del producto</label>
-   <input type="text" id="codigoPT" placeholder="Ej.: 11000SG" autocomplete="off" autocapitalize="characters" onchange="buscarDescripcionPT()">
-    <label for="descripcionPT">Descripción</label>
-    <input type="text" id="descripcionPT" placeholder="Descripción del producto">
-    <label for="cantidadPT">Cantidad de unidades del pallet</label>
-    <input type="number" id="cantidadPT" placeholder="Cantidad real de unidades" min="1" step="1" inputmode="numeric">
+    
+<label for="codigoPT">Código del producto</label>
+<input
+  type="text"
+  id="codigoPT"
+  placeholder="Ej.: 11000SG"
+  autocomplete="off"
+  autocapitalize="characters"
+  oninput="programarBusquedaDescripcionPT()"
+  onkeydown="if(event.key==='Enter'){event.preventDefault();buscarDescripcionPT();}"
+>
+
+<label for="descripcionPT">Descripción</label>
+<input
+  type="text"
+  id="descripcionPT"
+  placeholder="Se completa automáticamente"
+  readonly
+>
+
+<label for="cantidadPT">Cantidad de unidades del pallet</label>
+<input
+  type="number"
+  id="cantidadPT"
+  placeholder="Cantidad real de unidades"
+  min="1"
+  step="1"
+  inputmode="numeric"
+>
+
     <button type="button" class="transferir" id="botonRegistrarPT" onclick="registrarPalletPT()">REGISTRAR PALLET</button>
     <div id="mensajePT" role="status" aria-live="polite"></div>
     <p class="nota">Al registrar correctamente, el sistema devolverá el número correlativo del pallet y se habilitará la impresión de la etiqueta de 50 × 40 mm.</p>
@@ -424,6 +448,60 @@ async function registrar() {
   }
 }
 
+
+let temporizadorBusquedaPT = null;
+
+async function buscarDescripcionPT() {
+  const codigo = document.getElementById("codigoPT").value.trim();
+  const descripcion = document.getElementById("descripcionPT");
+  const mensaje = document.getElementById("mensajePT");
+
+  if (!codigo) {
+    descripcion.value = "";
+    return;
+  }
+
+  descripcion.value = "";
+  mensaje.textContent = "🔎 Buscando descripción del producto...";
+
+  try {
+    const url = URL_APPS_SCRIPT +
+      "?accion=buscarProducto&codigo=" +
+      encodeURIComponent(codigo);
+
+    const respuesta = await fetch(url, { cache: "no-store" });
+    if (!respuesta.ok) throw new Error("HTTP " + respuesta.status);
+
+    const resultado = await respuesta.json();
+
+    // Evita mostrar una descripción si el código cambió durante la búsqueda.
+    if (document.getElementById("codigoPT").value.trim() !== codigo) return;
+
+    if (resultado.encontrado && resultado.descripcion) {
+      descripcion.value = resultado.descripcion;
+      mensaje.textContent = "✅ Producto encontrado: " + resultado.descripcion;
+    } else {
+      descripcion.value = "";
+      mensaje.textContent = "⚠️ El código " + codigo +
+        " no está registrado en CONFIG PRODUCTO MP.";
+    }
+
+  } catch (error) {
+    console.error("Error buscando producto:", error);
+    descripcion.value = "";
+    mensaje.textContent = "❌ No se pudo consultar el producto: " + error.message;
+  }
+}
+
+function programarBusquedaDescripcionPT() {
+  clearTimeout(temporizadorBusquedaPT);
+
+  document.getElementById("descripcionPT").value = "";
+
+  temporizadorBusquedaPT = setTimeout(function() {
+    buscarDescripcionPT();
+  }, 500);
+}
 
 async function registrarPalletPT() {
   const boton = document.getElementById("botonRegistrarPT");
